@@ -1,0 +1,6 @@
+{
+  "name": "أكلة حلوة",
+  "description": "تطبيق إدارة وتسجيل طلبيات أكلة حلوة وحساب إجمالي المبيعات وصافي الأرباح الشهرية",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
