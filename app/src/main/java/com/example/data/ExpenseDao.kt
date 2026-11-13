@@ -1,0 +1,28 @@
+package com.example.data
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import com.example.model.ExpenseEntity
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface ExpenseDao {
+    @Query("SELECT * FROM expenses ORDER BY expenseDate DESC")
+    fun getAllExpenses(): Flow<List<ExpenseEntity>>
+
+    @Query("SELECT * FROM expenses WHERE yearMonth = :yearMonth ORDER BY expenseDate DESC")
+    fun getExpensesByMonth(yearMonth: String): Flow<List<ExpenseEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertExpense(expense: ExpenseEntity): Long
+
+    @Update
+    suspend fun updateExpense(expense: ExpenseEntity)
+
+    @Delete
+    suspend fun deleteExpense(expense: ExpenseEntity)
+}

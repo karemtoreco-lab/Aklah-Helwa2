@@ -10,8 +10,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.ui.theme.BrandRedPrimary
-import com.example.ui.theme.CleanWhite
+import com.example.ui.theme.AppTheme
 
 /**
  * A subtle decorative red-and-white checkered ribbon (bistro / Egyptian homemade brand accent).
@@ -21,8 +20,8 @@ fun CheckeredRibbon(
     modifier: Modifier = Modifier,
     height: Dp = 6.dp,
     squareSize: Dp = 6.dp,
-    primaryColor: Color = BrandRedPrimary,
-    secondaryColor: Color = CleanWhite.copy(alpha = 0.9f)
+    primaryColor: Color = AppTheme.colors.primaryBrand,
+    secondaryColor: Color = AppTheme.colors.cardSurface.copy(alpha = 0.9f)
 ) {
     Canvas(
         modifier = modifier

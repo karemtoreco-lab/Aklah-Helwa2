@@ -1,6 +1,7 @@
 package com.example.data
 
 import com.example.model.Order
+import com.example.model.OrderLineItemEntity
 import kotlinx.coroutines.flow.Flow
 
 class OrderRepository(private val orderDao: OrderDao) {
@@ -9,12 +10,30 @@ class OrderRepository(private val orderDao: OrderDao) {
 
     val distinctMonths: Flow<List<String>> = orderDao.getDistinctMonths()
 
+    val allLineItems: Flow<List<OrderLineItemEntity>> = orderDao.getAllLineItems()
+
     fun getOrdersByMonth(yearMonth: String): Flow<List<Order>> {
         return orderDao.getOrdersByMonth(yearMonth)
     }
 
+    fun getLineItemsForMonth(yearMonth: String): Flow<List<OrderLineItemEntity>> {
+        return orderDao.getLineItemsForMonth(yearMonth)
+    }
+
+    suspend fun getLineItemsForOrder(orderId: Long): List<OrderLineItemEntity> {
+        return orderDao.getLineItemsForOrder(orderId)
+    }
+
+    suspend fun getOrderByCloudId(cloudId: String): Order? {
+        return orderDao.getOrderByCloudId(cloudId)
+    }
+
     suspend fun insertOrder(order: Order): Long {
         return orderDao.insertOrder(order)
+    }
+
+    suspend fun saveOrderWithItems(order: Order, items: List<OrderLineItemEntity>): Long {
+        return orderDao.saveOrderWithItems(order, items)
     }
 
     suspend fun updateOrder(order: Order) {
@@ -27,11 +46,5 @@ class OrderRepository(private val orderDao: OrderDao) {
 
     suspend fun deleteOrderById(id: Long) {
         orderDao.deleteOrderById(id)
-    }
-
-    suspend fun ensureDataExists() {
-        if (orderDao.getCount() == 0) {
-            AppDatabase.populateInitialOrders(orderDao)
-        }
     }
 }

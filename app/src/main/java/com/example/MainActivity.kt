@@ -1,90 +1,121 @@
 package com.example
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.RestaurantMenu
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.RestaurantMenu
 import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.model.OrderStatus
-import com.example.model.PaymentStatus
+import com.example.model.AppStage
+import com.example.service.OrderNotificationService
+import com.example.ui.components.AdminSettingsDialog
 import com.example.ui.components.CheckeredRibbon
+import com.example.ui.components.DockNavItem
+import com.example.ui.components.FloatingNavDock
+import com.example.ui.components.OrderCelebrationDialog
 import com.example.ui.components.OrderDetailDialog
 import com.example.ui.components.OrderFormDialog
+import com.example.ui.components.ThemeToggleIconButton
+import com.example.ui.components.bounceClick
+import com.example.ui.screens.CustomerStorefrontScreen
 import com.example.ui.screens.DashboardScreen
-import com.example.ui.screens.MenuScreen
+import com.example.ui.screens.MenuManagementScreen
 import com.example.ui.screens.MonthlyStatsScreen
+import com.example.ui.screens.OnboardingScreen
 import com.example.ui.screens.OrdersScreen
-import com.example.ui.theme.BrandRedPrimary
-import com.example.ui.theme.CharcoalBlackBg
-import com.example.ui.theme.CharcoalCardBorder
-import com.example.ui.theme.CharcoalCardSurface
-import com.example.ui.theme.CleanWhite
+import com.example.ui.screens.ProductCatalogScreen
+import com.example.ui.screens.SplashScreen
+import com.example.ui.theme.AppTheme
 import com.example.ui.theme.MyApplicationTheme
-import com.example.ui.theme.TextWhiteSecondary
 import com.example.util.DateUtils
+import com.example.util.WhatsAppUtils
 import com.example.viewmodel.AppTab
 import com.example.viewmodel.OrderViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 class MainActivity : ComponentActivity() {
 
@@ -93,231 +124,453 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        handleNotificationIntent(intent)
         setContent {
-            MyApplicationTheme {
+            val isDarkMode by viewModel.isDarkMode.collectAsStateWithLifecycle()
+            MyApplicationTheme(darkTheme = isDarkMode) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                    AklehHelwaApp(viewModel = viewModel)
+                    AklehHelwaApp(viewModel = viewModel, isDarkMode = isDarkMode)
                 }
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNotificationIntent(intent)
+    }
+
+    private fun handleNotificationIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(OrderNotificationService.EXTRA_OPEN_ADMIN_ORDERS, false) == true) {
+            viewModel.openAdminOrdersFromNotification()
+        }
+    }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
-fun AklehHelwaApp(viewModel: OrderViewModel) {
+fun AklehHelwaApp(
+    viewModel: OrderViewModel,
+    isDarkMode: Boolean
+) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    val appStage by viewModel.appStage.collectAsStateWithLifecycle()
+    val adminPin by viewModel.adminPin.collectAsStateWithLifecycle()
+    val isAdminDevice by viewModel.isAdminDevice.collectAsStateWithLifecycle()
+    val adminWhatsAppNumber by viewModel.adminWhatsAppNumber.collectAsStateWithLifecycle()
+    val cloudConfig by viewModel.cloudConfig.collectAsStateWithLifecycle()
+    val cloudSyncState by viewModel.cloudSyncState.collectAsStateWithLifecycle()
+
+    val customerProfile by viewModel.customerProfile.collectAsStateWithLifecycle()
+    val storefrontCategories by viewModel.storefrontCategories.collectAsStateWithLifecycle()
+    val storefrontItems by viewModel.storefrontItems.collectAsStateWithLifecycle()
+    val primaryImagesMap by viewModel.primaryImagesMap.collectAsStateWithLifecycle()
+    val customerCart by viewModel.customerCart.collectAsStateWithLifecycle()
+    val favoriteIds by viewModel.favoriteMenuItemIds.collectAsStateWithLifecycle()
+    val lastReorderItems by viewModel.lastReorderItems.collectAsStateWithLifecycle()
+    val kitchenOpen by viewModel.kitchenOpen.collectAsStateWithLifecycle()
+    val dailyOfferText by viewModel.dailyOfferText.collectAsStateWithLifecycle()
+    val deliveryZones by viewModel.deliveryZones.collectAsStateWithLifecycle()
+    val trackedOrders by viewModel.customerTrackedOrders.collectAsStateWithLifecycle()
+    val celebrationMessage by viewModel.celebrationMessage.collectAsStateWithLifecycle()
+
+    var requestedAdminNotifPermission by remember { mutableStateOf(false) }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { _ ->
+        if (isAdminDevice) {
+            OrderNotificationService.start(context)
+        }
+    }
+
+    // Start Admin-only real-time ForegroundService strictly on Admin devices
+    LaunchedEffect(isAdminDevice) {
+        if (isAdminDevice) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val granted = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+                if (!granted && !requestedAdminNotifPermission) {
+                    requestedAdminNotifPermission = true
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+            OrderNotificationService.start(context)
+        }
+    }
+
+    // Live User Presence lifecycle observer (ON_START -> online, ON_STOP -> offline)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> viewModel.setUserPresence(true)
+                Lifecycle.Event.ON_STOP -> viewModel.setUserPresence(false)
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // Periodic 30s presence heartbeat while foregrounded
+    LaunchedEffect(lifecycleOwner) {
+        while (isActive) {
+            delay(30_000L)
+            if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                viewModel.setUserPresence(true)
+            }
+        }
+    }
+
+    AnimatedContent(
+        targetState = appStage,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(260)) togetherWith fadeOut(animationSpec = tween(200))
+        },
+        label = "app_stage_transition"
+    ) { stage ->
+        when (stage) {
+            AppStage.SPLASH -> {
+                SplashScreen(
+                    onFinished = { viewModel.completeSplash() }
+                )
+            }
+
+            AppStage.ONBOARDING -> {
+                OnboardingScreen(
+                    isDarkMode = isDarkMode,
+                    adminPin = adminPin,
+                    onToggleTheme = { viewModel.toggleDarkMode() },
+                    onCompleteOnboarding = { username, password ->
+                        viewModel.completeOnboarding(username, password)
+                    },
+                    onEnterAdmin = { viewModel.enterAdminPanel() }
+                )
+            }
+
+            AppStage.CUSTOMER_STOREFRONT -> {
+                CustomerStorefrontScreen(
+                    categories = storefrontCategories,
+                    items = storefrontItems,
+                    primaryImages = primaryImagesMap,
+                    cartItems = customerCart,
+                    customerProfile = customerProfile,
+                    favoriteIds = favoriteIds,
+                    hasPreviousOrder = lastReorderItems.isNotEmpty(),
+                    kitchenOpen = kitchenOpen,
+                    dailyOfferText = dailyOfferText,
+                    deliveryZones = deliveryZones,
+                    trackedOrders = trackedOrders,
+                    isDarkMode = isDarkMode,
+                    adminPin = adminPin,
+                    cloudSyncState = cloudSyncState,
+                    onToggleTheme = { viewModel.toggleDarkMode() },
+                    onEnterAdmin = { viewModel.enterAdminPanel() },
+                    onToggleFavorite = { viewModel.toggleFavorite(it) },
+                    onReorderLastOrder = { viewModel.reorderLastOrder() },
+                    onReorderFromTrackedOrder = { viewModel.reorderFromTrackedOrder(it) },
+                    onSubmitOrderRating = { order, stars -> viewModel.submitCustomerOrderRating(order, stars) },
+                    onAddToCart = { item, img, qty -> viewModel.addToCustomerCart(item, img, qty) },
+                    onUpdateCartQuantity = { id, delta -> viewModel.updateCustomerCartQuantity(id, delta) },
+                    onClearCart = { viewModel.clearCustomerCart() },
+                    onSubmitOrder = { name, phone, zone, address, notes ->
+                        viewModel.submitCustomerOrder(
+                            customerName = name,
+                            customerPhone = phone,
+                            deliveryZone = zone,
+                            deliveryAddress = address,
+                            notes = notes,
+                            onOrderReadyForWhatsApp = { waMessage, adminNumber ->
+                                WhatsAppUtils.launchWhatsAppOrderIntent(
+                                    context = context,
+                                    rawAdminPhone = adminNumber,
+                                    message = waMessage
+                                )
+                            }
+                        )
+                    }
+                )
+            }
+
+            AppStage.ADMIN_PANEL -> {
+                BackHandler {
+                    viewModel.returnToCustomerStorefront()
+                }
+                AdminPanelScaffold(
+                    viewModel = viewModel,
+                    isDarkMode = isDarkMode,
+                    adminPin = adminPin,
+                    adminWhatsAppNumber = adminWhatsAppNumber,
+                    kitchenOpen = kitchenOpen,
+                    dailyOfferText = dailyOfferText,
+                    deliveryZones = deliveryZones,
+                    cloudConfig = cloudConfig,
+                    cloudSyncState = cloudSyncState
+                )
+            }
+        }
+    }
+
+    celebrationMessage?.let { msg ->
+        OrderCelebrationDialog(
+            message = msg,
+            onDismiss = { viewModel.dismissCelebration() }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AdminPanelScaffold(
+    viewModel: OrderViewModel,
+    isDarkMode: Boolean,
+    adminPin: String,
+    adminWhatsAppNumber: String,
+    kitchenOpen: Boolean,
+    dailyOfferText: String,
+    deliveryZones: List<com.example.model.DeliveryZone>,
+    cloudConfig: com.example.model.CloudConfig,
+    cloudSyncState: com.example.model.CloudSyncState
+) {
+    val context = LocalContext.current
+    val colors = AppTheme.colors
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showSettingsDialog by remember { mutableStateOf(false) }
+
     val currentTab by viewModel.selectedTab.collectAsStateWithLifecycle()
     val selectedYearMonth by viewModel.selectedYearMonth.collectAsStateWithLifecycle()
-    val availableMonths by viewModel.availableMonths.collectAsStateWithLifecycle()
     val filteredOrders by viewModel.filteredOrders.collectAsStateWithLifecycle()
     val ordersForSelectedMonth by viewModel.ordersForSelectedMonth.collectAsStateWithLifecycle()
+    val orderItemsMap by viewModel.orderItemsMap.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val statusFilter by viewModel.statusFilter.collectAsStateWithLifecycle()
     val monthlyStats by viewModel.monthlyStats.collectAsStateWithLifecycle()
+    val expensesForSelectedMonth by viewModel.expensesForSelectedMonth.collectAsStateWithLifecycle()
+    val cloudAppUsers by viewModel.cloudAppUsers.collectAsStateWithLifecycle()
+
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val products by viewModel.products.collectAsStateWithLifecycle()
+    val primaryImagesMap by viewModel.primaryImagesMap.collectAsStateWithLifecycle()
+    val imagesByProductMap by viewModel.imagesByProductMap.collectAsStateWithLifecycle()
+
+    val menuCategories by viewModel.menuCategories.collectAsStateWithLifecycle()
+    val menuItems by viewModel.menuItems.collectAsStateWithLifecycle()
+    val generatedMenus by viewModel.generatedMenus.collectAsStateWithLifecycle()
+    val previewBitmaps by viewModel.previewBitmaps.collectAsStateWithLifecycle()
+    val selectedPreviewCategoryId by viewModel.selectedPreviewCategoryId.collectAsStateWithLifecycle()
+    val isGeneratingPreview by viewModel.isGeneratingPreview.collectAsStateWithLifecycle()
 
     val isOrderDialogOpen by viewModel.isOrderDialogOpen.collectAsStateWithLifecycle()
     val editingOrder by viewModel.editingOrder.collectAsStateWithLifecycle()
+    val editingDraftItems by viewModel.editingDraftItems.collectAsStateWithLifecycle()
     val selectedOrderDetails by viewModel.selectedOrderDetails.collectAsStateWithLifecycle()
+    val uiMessage by viewModel.uiMessage.collectAsStateWithLifecycle()
+
+    LaunchedEffect(uiMessage) {
+        val msg = uiMessage
+        if (!msg.isNullOrBlank()) {
+            snackbarHostState.showSnackbar(msg)
+            viewModel.clearUiMessage()
+        }
+    }
+
+    val dockItems = remember(currentTab) {
+        listOf(
+            DockNavItem(
+                title = "الرئيسية",
+                selectedIcon = Icons.Default.Dashboard,
+                unselectedIcon = Icons.Outlined.Dashboard,
+                testTag = "tab_dashboard",
+                selected = currentTab == AppTab.DASHBOARD,
+                onClick = { viewModel.setTab(AppTab.DASHBOARD) }
+            ),
+            DockNavItem(
+                title = "الطلبيات",
+                selectedIcon = Icons.Default.ReceiptLong,
+                unselectedIcon = Icons.Outlined.ReceiptLong,
+                testTag = "tab_orders",
+                selected = currentTab == AppTab.ORDERS,
+                onClick = { viewModel.setTab(AppTab.ORDERS) }
+            ),
+            DockNavItem(
+                title = "الأصناف",
+                selectedIcon = Icons.Default.Inventory2,
+                unselectedIcon = Icons.Outlined.Inventory2,
+                testTag = "tab_products",
+                selected = currentTab == AppTab.PRODUCTS,
+                onClick = { viewModel.setTab(AppTab.PRODUCTS) }
+            ),
+            DockNavItem(
+                title = "المنيو",
+                selectedIcon = Icons.Default.RestaurantMenu,
+                unselectedIcon = Icons.Outlined.RestaurantMenu,
+                testTag = "tab_menu",
+                selected = currentTab == AppTab.MENU,
+                onClick = { viewModel.setTab(AppTab.MENU) }
+            ),
+            DockNavItem(
+                title = "التقارير",
+                selectedIcon = Icons.Default.TrendingUp,
+                unselectedIcon = Icons.Outlined.TrendingUp,
+                testTag = "tab_monthly_stats",
+                selected = currentTab == AppTab.MONTHLY_STATS,
+                onClick = { viewModel.setTab(AppTab.MONTHLY_STATS) }
+            )
+        )
+    }
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(CharcoalBlackBg),
-        containerColor = CharcoalBlackBg,
+            .background(colors.backgroundGradient),
+        containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
-            Column {
+            Column(modifier = Modifier.background(colors.cardSurface).statusBarsPadding()) {
+                CheckeredRibbon(height = 4.dp, squareSize = 4.dp)
                 TopAppBar(
                     title = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.testTag("app_header")
-                        ) {
-                            Box(
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("app_header")) {
+                            Image(
+                                painter = painterResource(id = R.drawable.app_logo),
+                                contentDescription = "شعار أكلة حلوة",
+                                contentScale = ContentScale.Crop,
                                 modifier = Modifier
-                                    .size(42.dp)
-                                    .shadow(elevation = 4.dp, shape = RoundedCornerShape(12.dp))
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(
-                                        Brush.linearGradient(
-                                            listOf(Color(0xFFFF3D00), BrandRedPrimary)
-                                        )
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Fastfood,
-                                    contentDescription = null,
-                                    tint = CleanWhite,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
+                                    .size(40.dp)
+                                    .shadow(4.dp, CircleShape, spotColor = colors.primaryBrand)
+                                    .clip(CircleShape)
+                                    .border(1.5.dp, colors.primaryBrand, CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
                             Column {
                                 Text(
                                     text = "أكلة حلوة",
-                                    style = MaterialTheme.typography.titleLarge,
+                                    style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = CleanWhite
+                                    color = colors.textPrimary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = "أشهى الأكلات المنزلية وحسابات الأرباح",
+                                    text = "إدارة أ/ نهى ماهر",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = TextWhiteSecondary
+                                    color = colors.textSecondary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
                     },
                     actions = {
-                        // Brand month pill
                         Surface(
-                            color = Color(0xFF381212),
-                            shape = RoundedCornerShape(12.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BrandRedPrimary.copy(alpha = 0.5f)),
-                            modifier = Modifier
-                                .padding(end = 12.dp)
-                                .testTag("header_month_chip")
+                            color = colors.primaryContainer,
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.dp, colors.primaryBrand.copy(alpha = 0.35f)),
+                            modifier = Modifier.testTag("header_month_chip")
                         ) {
                             Text(
                                 text = DateUtils.formatYearMonthArabic(selectedYearMonth),
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = BrandRedPrimary,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                color = colors.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
                             )
                         }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        IconButton(
+                            onClick = { viewModel.returnToCustomerStorefront() },
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(colors.secondarySurface)
+                                .border(1.dp, colors.cardBorder, CircleShape)
+                                .testTag("admin_return_customer_btn")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Storefront,
+                                contentDescription = "العودة لواجهة العملاء",
+                                tint = colors.goldAccent,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        ThemeToggleIconButton(
+                            isDarkMode = isDarkMode,
+                            onToggle = { viewModel.toggleDarkMode() }
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        IconButton(
+                            onClick = { showSettingsDialog = true },
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(colors.secondarySurface)
+                                .border(1.dp, colors.cardBorder, CircleShape)
+                                .testTag("admin_settings_btn")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "إعدادات الإدارة والمزامنة",
+                                tint = colors.textPrimary,
+                                modifier = Modifier.size(19.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = CharcoalCardSurface
-                    )
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.cardSurface)
                 )
-
-                // Subtle Red and White Checkered ribbon under top bar
-                CheckeredRibbon(height = 4.dp)
+                HorizontalDivider(color = colors.cardBorder, thickness = 1.dp)
             }
         },
         bottomBar = {
-            Column {
-                CheckeredRibbon(height = 3.dp)
-
-                NavigationBar(
-                    modifier = Modifier
-                        .windowInsetsPadding(WindowInsets.navigationBars)
-                        .shadow(elevation = 10.dp)
-                        .testTag("bottom_navigation"),
-                    containerColor = CharcoalCardSurface,
-                    tonalElevation = 6.dp
-                ) {
-                    // Tab 1: Dashboard
-                    NavigationBarItem(
-                        selected = currentTab == AppTab.DASHBOARD,
-                        onClick = { viewModel.setTab(AppTab.DASHBOARD) },
-                        icon = {
-                            Icon(
-                                imageVector = if (currentTab == AppTab.DASHBOARD) Icons.Default.Dashboard else Icons.Outlined.Dashboard,
-                                contentDescription = "الرئيسية"
-                            )
-                        },
-                        label = { Text("الرئيسية", fontWeight = if (currentTab == AppTab.DASHBOARD) FontWeight.Bold else FontWeight.Normal) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = CleanWhite,
-                            selectedTextColor = BrandRedPrimary,
-                            unselectedIconColor = TextWhiteSecondary,
-                            unselectedTextColor = TextWhiteSecondary,
-                            indicatorColor = BrandRedPrimary
-                        ),
-                        modifier = Modifier.testTag("tab_dashboard")
-                    )
-
-                    // Tab 2: Orders
-                    NavigationBarItem(
-                        selected = currentTab == AppTab.ORDERS,
-                        onClick = { viewModel.setTab(AppTab.ORDERS) },
-                        icon = {
-                            Icon(
-                                imageVector = if (currentTab == AppTab.ORDERS) Icons.Default.ReceiptLong else Icons.Outlined.ReceiptLong,
-                                contentDescription = "الطلبيات"
-                            )
-                        },
-                        label = { Text("الطلبيات", fontWeight = if (currentTab == AppTab.ORDERS) FontWeight.Bold else FontWeight.Normal) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = CleanWhite,
-                            selectedTextColor = BrandRedPrimary,
-                            unselectedIconColor = TextWhiteSecondary,
-                            unselectedTextColor = TextWhiteSecondary,
-                            indicatorColor = BrandRedPrimary
-                        ),
-                        modifier = Modifier.testTag("tab_orders")
-                    )
-
-                    // Tab 3: Menu
-                    NavigationBarItem(
-                        selected = currentTab == AppTab.MENU,
-                        onClick = { viewModel.setTab(AppTab.MENU) },
-                        icon = {
-                            Icon(
-                                imageVector = if (currentTab == AppTab.MENU) Icons.Default.RestaurantMenu else Icons.Outlined.RestaurantMenu,
-                                contentDescription = "المنيو"
-                            )
-                        },
-                        label = { Text("المنيو", fontWeight = if (currentTab == AppTab.MENU) FontWeight.Bold else FontWeight.Normal) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = CleanWhite,
-                            selectedTextColor = BrandRedPrimary,
-                            unselectedIconColor = TextWhiteSecondary,
-                            unselectedTextColor = TextWhiteSecondary,
-                            indicatorColor = BrandRedPrimary
-                        ),
-                        modifier = Modifier.testTag("tab_menu")
-                    )
-
-                    // Tab 4: Monthly Stats
-                    NavigationBarItem(
-                        selected = currentTab == AppTab.MONTHLY_STATS,
-                        onClick = { viewModel.setTab(AppTab.MONTHLY_STATS) },
-                        icon = {
-                            Icon(
-                                imageVector = if (currentTab == AppTab.MONTHLY_STATS) Icons.Default.TrendingUp else Icons.Outlined.TrendingUp,
-                                contentDescription = "التقارير"
-                            )
-                        },
-                        label = { Text("التقارير", fontWeight = if (currentTab == AppTab.MONTHLY_STATS) FontWeight.Bold else FontWeight.Normal) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = CleanWhite,
-                            selectedTextColor = BrandRedPrimary,
-                            unselectedIconColor = TextWhiteSecondary,
-                            unselectedTextColor = TextWhiteSecondary,
-                            indicatorColor = BrandRedPrimary
-                        ),
-                        modifier = Modifier.testTag("tab_monthly_stats")
-                    )
-                }
-            }
+            FloatingNavDock(items = dockItems)
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { viewModel.openAddOrderDialog() },
-                icon = { Icon(Icons.Default.Add, contentDescription = null, tint = CleanWhite) },
-                text = { Text("أوردر جديد", fontWeight = FontWeight.Bold, color = CleanWhite) },
-                modifier = Modifier
-                    .shadow(elevation = 8.dp, shape = RoundedCornerShape(16.dp))
-                    .testTag("fab_add_order"),
-                containerColor = BrandRedPrimary,
-                contentColor = CleanWhite,
-                shape = RoundedCornerShape(16.dp)
-            )
+            if (currentTab == AppTab.DASHBOARD || currentTab == AppTab.ORDERS) {
+                ExtendedFloatingActionButton(
+                    onClick = { viewModel.openAddOrderDialog() },
+                    icon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
+                    text = { Text("أوردر جديد", fontWeight = FontWeight.ExtraBold, color = Color.White) },
+                    modifier = Modifier
+                        .shadow(10.dp, RoundedCornerShape(50), spotColor = colors.primaryBrand.copy(alpha = 0.5f))
+                        .bounceClick()
+                        .testTag("fab_add_order"),
+                    containerColor = colors.primaryBrand,
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(50)
+                )
+            }
         }
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .background(CharcoalBlackBg)
+                .padding(top = innerPadding.calculateTopPadding())
+                .background(colors.backgroundGradient)
         ) {
             AnimatedContent(
                 targetState = currentTab,
                 transitionSpec = {
-                    fadeIn() togetherWith fadeOut()
+                    val forward = targetState.ordinal > initialState.ordinal
+                    val enterOffset: (Int) -> Int = { fullWidth ->
+                        if (forward) -fullWidth / 4 else fullWidth / 4
+                    }
+                    val exitOffset: (Int) -> Int = { fullWidth ->
+                        if (forward) fullWidth / 6 else -fullWidth / 6
+                    }
+                    (slideInHorizontally(
+                        animationSpec = tween(250, easing = FastOutSlowInEasing),
+                        initialOffsetX = enterOffset
+                    ) + fadeIn(animationSpec = tween(220))) togetherWith
+                        (slideOutHorizontally(
+                            animationSpec = tween(200, easing = FastOutSlowInEasing),
+                            targetOffsetX = exitOffset
+                        ) + fadeOut(animationSpec = tween(160)))
                 },
                 label = "tab_transition"
             ) { targetTab ->
@@ -327,34 +580,24 @@ fun AklehHelwaApp(viewModel: OrderViewModel) {
                             stats = monthlyStats,
                             selectedYearMonth = selectedYearMonth,
                             recentOrders = ordersForSelectedMonth,
+                            appUsers = cloudAppUsers,
+                            kitchenOpen = kitchenOpen,
+                            onToggleKitchenOpen = { viewModel.toggleKitchenOpen(it) },
                             onPreviousMonth = { viewModel.previousMonth() },
                             onNextMonth = { viewModel.nextMonth() },
                             onNavigateToOrders = { viewModel.setTab(AppTab.ORDERS) },
+                            onNavigateToProducts = { viewModel.setTab(AppTab.PRODUCTS) },
                             onNavigateToMenu = { viewModel.setTab(AppTab.MENU) },
                             onNavigateToAnalytics = { viewModel.setTab(AppTab.MONTHLY_STATS) },
                             onOpenAddOrderDialog = { viewModel.openAddOrderDialog() },
-                            onOrderClick = { viewModel.showOrderDetails(it) },
-                            onSaveQuickOrder = { name, value, profit, items, phone ->
-                                val cost = (value - profit).coerceAtLeast(0.0)
-                                val finalItems = if (items.isBlank()) "طلب طعام متنوع" else items
-                                viewModel.saveOrder(
-                                    customerName = name,
-                                    customerPhone = phone,
-                                    itemsDescription = finalItems,
-                                    salePrice = value,
-                                    costPrice = cost,
-                                    orderDate = System.currentTimeMillis(),
-                                    status = OrderStatus.DELIVERED.name,
-                                    paymentStatus = PaymentStatus.PAID.name,
-                                    notes = ""
-                                )
-                            }
+                            onOrderClick = { viewModel.showOrderDetails(it) }
                         )
                     }
 
                     AppTab.ORDERS -> {
                         OrdersScreen(
                             orders = filteredOrders,
+                            orderItemsMap = orderItemsMap,
                             searchQuery = searchQuery,
                             onSearchQueryChange = { viewModel.setSearchQuery(it) },
                             statusFilter = statusFilter,
@@ -366,21 +609,77 @@ fun AklehHelwaApp(viewModel: OrderViewModel) {
                         )
                     }
 
+                    AppTab.PRODUCTS -> {
+                        ProductCatalogScreen(
+                            categories = categories,
+                            products = products,
+                            primaryImages = primaryImagesMap,
+                            imagesByProduct = imagesByProductMap,
+                            onSaveCategory = { id, name -> viewModel.saveCategory(id, name) },
+                            onDeleteCategory = { viewModel.deleteCategory(it) },
+                            onSaveProduct = { id, name, catId, unit, desc, purchase, selling, active ->
+                                viewModel.saveProduct(id, name, catId, unit, desc, purchase, selling, active)
+                            },
+                            onToggleProductActive = { viewModel.toggleProductActive(it) },
+                            onDeleteProduct = { viewModel.deleteProduct(it) },
+                            onAddImagesForProduct = { prodId, uris -> viewModel.addProductImagesFromUris(prodId, uris) },
+                            onSetPrimaryImage = { prodId, imgId -> viewModel.setPrimaryProductImage(prodId, imgId) },
+                            onDeleteImage = { viewModel.deleteProductImage(it) }
+                        )
+                    }
+
                     AppTab.MENU -> {
-                        MenuScreen(
-                            menuItems = viewModel.menuItems,
-                            onSelectMenuItem = { viewModel.openAddOrderForMenuItem(it) }
+                        MenuManagementScreen(
+                            menuCategories = menuCategories,
+                            menuItems = menuItems,
+                            catalogProducts = products,
+                            primaryImages = primaryImagesMap,
+                            previewBitmaps = previewBitmaps,
+                            selectedPreviewCategoryId = selectedPreviewCategoryId,
+                            isGeneratingPreview = isGeneratingPreview,
+                            generatedMenus = generatedMenus,
+                            onAddMenuCategory = { viewModel.addMenuCategory(it) },
+                            onUpdateMenuCategory = { viewModel.updateMenuCategory(it) },
+                            onDeleteMenuCategory = { viewModel.deleteMenuCategory(it) },
+                            onMoveMenuCategory = { cat, up -> viewModel.moveMenuCategory(cat, up) },
+                            onAddCatalogProductToMenu = { prod, menuCatId -> viewModel.addProductToMenu(prod, menuCatId) },
+                            onAddManualMenuItem = { menuCatId, name, unit, desc, price, isVar, isPopular, isPreOrder24h ->
+                                viewModel.addManualMenuItem(
+                                    menuCategoryId = menuCatId,
+                                    displayName = name,
+                                    unitLabel = unit,
+                                    description = desc,
+                                    publishedPrice = price,
+                                    isVariablePrice = isVar,
+                                    isPopular = isPopular,
+                                    isPreOrder24h = isPreOrder24h
+                                )
+                            },
+                            onUpdateMenuItem = { viewModel.updateMenuItem(it) },
+                            onRestoreDefaultPrice = { viewModel.restoreMenuItemDefaultPrice(it) },
+                            onDeleteMenuItem = { viewModel.deleteMenuItem(it) },
+                            onMoveMenuItem = { item, up -> viewModel.moveMenuItem(item, up) },
+                            onAddMenuItemPhotos = { item, uris -> viewModel.addMenuItemPhotosFromUris(item, uris) },
+                            onRemoveMenuItemPhoto = { item, idx -> viewModel.removeMenuItemPhotoAt(item, idx) },
+                            onSelectPreviewCategory = { viewModel.setPreviewCategoryFilter(it) },
+                            onRefreshPreview = { viewModel.refreshMenuPreview() },
+                            onExportAllPages = { onDone -> viewModel.exportMenuToPng(onExportComplete = onDone) },
+                            onExportSinglePage = { pageIdx, onDone ->
+                                viewModel.exportMenuToPng(singlePageZeroIndex = pageIdx, onExportComplete = onDone)
+                            },
+                            onDeleteGeneratedMenu = { viewModel.deleteGeneratedMenu(it) }
                         )
                     }
 
                     AppTab.MONTHLY_STATS -> {
                         MonthlyStatsScreen(
                             stats = monthlyStats,
+                            expenses = expensesForSelectedMonth,
                             selectedYearMonth = selectedYearMonth,
-                            availableMonths = availableMonths,
-                            onSelectMonth = { viewModel.selectMonth(it) },
                             onPreviousMonth = { viewModel.previousMonth() },
                             onNextMonth = { viewModel.nextMonth() },
+                            onAddExpense = { title, cat, amt, notes -> viewModel.saveExpense(title, cat, amt, notes) },
+                            onDeleteExpense = { viewModel.deleteExpense(it) },
                             onShareReport = {
                                 val text = viewModel.generateMonthlyReportText()
                                 val sendIntent = Intent().apply {
@@ -397,19 +696,40 @@ fun AklehHelwaApp(viewModel: OrderViewModel) {
         }
     }
 
-    // Dialog for adding or editing an order
+    if (showSettingsDialog) {
+        AdminSettingsDialog(
+            isDarkMode = isDarkMode,
+            currentPin = adminPin,
+            adminWhatsAppNumber = adminWhatsAppNumber,
+            dailyOfferText = dailyOfferText,
+            deliveryZones = deliveryZones,
+            cloudConfig = cloudConfig,
+            cloudSyncState = cloudSyncState,
+            onToggleTheme = { viewModel.toggleDarkMode() },
+            onUpdatePin = { viewModel.updateAdminPin(it) },
+            onUpdateWhatsAppNumber = { viewModel.updateAdminWhatsAppNumber(it) },
+            onUpdateDailyOffer = { viewModel.updateDailyOffer(it) },
+            onSaveDeliveryZones = { viewModel.saveDeliveryZones(it) },
+            onSyncMenuNow = { viewModel.syncPublishedMenuToCloudNow() },
+            onReturnToCustomerStorefront = { viewModel.returnToCustomerStorefront() },
+            onDismiss = { showSettingsDialog = false }
+        )
+    }
+
     if (isOrderDialogOpen) {
         OrderFormDialog(
             initialOrder = editingOrder,
+            initialDraftItems = editingDraftItems,
+            categories = categories,
+            products = products,
+            primaryImages = primaryImagesMap,
             onDismiss = { viewModel.closeOrderDialog() },
-            onSaveOrder = { id, name, phone, items, sale, cost, date, status, payment, notes ->
-                viewModel.saveOrder(
+            onSaveOrder = { id, name, phone, lineItems, date, status, payment, notes ->
+                viewModel.saveMultiProductOrder(
                     id = id,
                     customerName = name,
                     customerPhone = phone,
-                    itemsDescription = items,
-                    salePrice = sale,
-                    costPrice = cost,
+                    lineItems = lineItems,
                     orderDate = date,
                     status = status,
                     paymentStatus = payment,
@@ -419,17 +739,17 @@ fun AklehHelwaApp(viewModel: OrderViewModel) {
         )
     }
 
-    // Dialog for viewing order details
     selectedOrderDetails?.let { order ->
         OrderDetailDialog(
             order = order,
+            lineItems = orderItemsMap[order.id].orEmpty(),
             onDismiss = { viewModel.showOrderDetails(null) },
             onEdit = {
                 viewModel.showOrderDetails(null)
                 viewModel.openAddOrderDialog(order)
             },
             onDelete = { viewModel.deleteOrder(order) },
-            onToggleStatus = { viewModel.toggleOrderStatus(order) },
+            onSelectStatus = { nextStatus -> viewModel.updateOrderStatus(order, nextStatus) },
             onTogglePayment = { viewModel.togglePaymentStatus(order) },
             receiptText = viewModel.generateOrderReceiptText(order)
         )

@@ -8,66 +8,67 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.R
 
-// Beautiful Arabic Cairo Font Family
 val CairoFontFamily = FontFamily(
     Font(R.font.cairo, FontWeight.Normal),
     Font(R.font.cairo, FontWeight.Medium),
     Font(R.font.cairo, FontWeight.SemiBold),
-    Font(R.font.cairo, FontWeight.Bold)
+    Font(R.font.cairo, FontWeight.Bold),
+    Font(R.font.cairo, FontWeight.ExtraBold)
 )
 
+// Text colors are left Unspecified so Typography adapts seamlessly to Light & Dark surfaces
 val AppTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = CairoFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 32.sp,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 30.sp,
         lineHeight = 40.sp
     ),
     displayMedium = TextStyle(
         fontFamily = CairoFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 28.sp,
-        lineHeight = 36.sp
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 26.sp,
+        lineHeight = 34.sp
     ),
     displaySmall = TextStyle(
-        fontFamily = CairoFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 24.sp,
-        lineHeight = 32.sp
-    ),
-    headlineLarge = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
         lineHeight = 30.sp
     ),
+    headlineLarge = TextStyle(
+        fontFamily = CairoFontFamily,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 21.sp,
+        lineHeight = 29.sp
+    ),
     headlineMedium = TextStyle(
         fontFamily = CairoFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 20.sp,
-        lineHeight = 28.sp
+        fontWeight = FontWeight.Bold,
+        fontSize = 19.sp,
+        lineHeight = 27.sp
     ),
     headlineSmall = TextStyle(
         fontFamily = CairoFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 18.sp,
-        lineHeight = 26.sp
+        fontWeight = FontWeight.Bold,
+        fontSize = 17.sp,
+        lineHeight = 25.sp
     ),
     titleLarge = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
-        lineHeight = 24.sp
+        lineHeight = 25.sp
     ),
     titleMedium = TextStyle(
         fontFamily = CairoFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 16.sp,
+        fontWeight = FontWeight.Bold,
+        fontSize = 15.sp,
         lineHeight = 22.sp
     ),
     titleSmall = TextStyle(
         fontFamily = CairoFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
         lineHeight = 20.sp
     ),
@@ -91,13 +92,13 @@ val AppTypography = Typography(
     ),
     labelLarge = TextStyle(
         fontFamily = CairoFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 14.sp,
+        fontWeight = FontWeight.Bold,
+        fontSize = 13.sp,
         lineHeight = 18.sp
     ),
     labelMedium = TextStyle(
         fontFamily = CairoFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 12.sp,
         lineHeight = 16.sp
     ),
