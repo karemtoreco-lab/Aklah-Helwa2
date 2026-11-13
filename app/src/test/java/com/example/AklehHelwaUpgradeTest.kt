@@ -10,6 +10,7 @@ import com.example.data.AppDatabase
 import com.example.data.BusinessRepository
 import com.example.data.OrderRepository
 import com.example.model.AppUser
+import com.example.model.AppVersionConfig
 import com.example.model.Order
 import com.example.model.OrderLineItemEntity
 import com.example.model.OrderStatus
@@ -401,5 +402,47 @@ class AklehHelwaUpgradeTest {
         val state = com.example.model.CloudSyncState.Connected(cfg.projectId)
         assertTrue(state.isCloudConnected)
         assertEquals("متصل بالسحابة تلقائياً (akla-helwa)", state.statusMessage)
+    }
+
+    @Test
+    fun `remote app version checker detects newer builds with valid download url`() {
+        assertEquals(1, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.0", BuildConfig.VERSION_NAME)
+
+        val newer = AppVersionConfig(
+            latestVersionCode = 2,
+            latestVersionName = "1.1.0",
+            downloadUrl = "https://example.com/akla-helwa-1.1.0.apk",
+            releaseNotes = "تحسينات في السرعة",
+            isMandatory = false
+        )
+        val sameVersion = newer.copy(latestVersionCode = 1)
+        val blankUrl = newer.copy(downloadUrl = "   ")
+
+        assertTrue(newer.isUpdateAvailable(BuildConfig.VERSION_CODE))
+        assertFalse(sameVersion.isUpdateAvailable(BuildConfig.VERSION_CODE))
+        assertFalse(blankUrl.isUpdateAvailable(BuildConfig.VERSION_CODE))
+    }
+
+    @Test
+    fun `image utils preserves aspect ratio under 640px and blocks local content uris`() {
+        val (w1, h1) = com.example.util.ImageUtils.calculateTargetDimensions(1280, 640, 640)
+        assertEquals(640, w1)
+        assertEquals(320, h1)
+
+        val (w2, h2) = com.example.util.ImageUtils.calculateTargetDimensions(400, 300, 640)
+        assertEquals(400, w2)
+        assertEquals(300, h2)
+
+        assertTrue(com.example.util.ImageUtils.isBase64OrDataUri("data:image/jpeg;base64,ABC"))
+        assertFalse(com.example.util.ImageUtils.isBase64OrDataUri("content://media/external/images/media/12"))
+        assertTrue(com.example.util.ImageUtils.isRemoteUrlOrFile("https://cdn.example.com/dish.jpg"))
+
+        val filtered = Base64ImageUtils.parsePhotosJson(
+            Base64ImageUtils.encodePhotosJson(
+                listOf("content://media/1", "data:image/jpeg;base64,XYZ", "https://example.com/a.jpg")
+            )
+        )
+        assertEquals(listOf("data:image/jpeg;base64,XYZ", "https://example.com/a.jpg"), filtered)
     }
 }

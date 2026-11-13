@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -65,6 +66,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.BuildConfig
+import com.example.model.AppVersionConfig
 import com.example.model.CloudConfig
 import com.example.model.CloudSyncState
 import com.example.model.DeliveryZone
@@ -79,6 +82,7 @@ fun AdminSettingsDialog(
     adminWhatsAppNumber: String,
     dailyOfferText: String,
     deliveryZones: List<DeliveryZone>,
+    appVersionConfig: AppVersionConfig?,
     cloudConfig: CloudConfig,
     cloudSyncState: CloudSyncState,
     onToggleTheme: () -> Unit,
@@ -86,6 +90,7 @@ fun AdminSettingsDialog(
     onUpdateWhatsAppNumber: (String) -> Unit,
     onUpdateDailyOffer: (String) -> Unit,
     onSaveDeliveryZones: (List<DeliveryZone>) -> Unit,
+    onPublishAppVersion: (Int, String, String, String, Boolean) -> Unit,
     onSyncMenuNow: () -> Unit,
     onReturnToCustomerStorefront: () -> Unit,
     onDismiss: () -> Unit
@@ -97,6 +102,21 @@ fun AdminSettingsDialog(
     var editableZones by remember(deliveryZones) { mutableStateOf(deliveryZones) }
     var newZoneName by remember { mutableStateOf("") }
     var newZoneFee by remember { mutableStateOf("") }
+    var versionCodeInput by remember(appVersionConfig) {
+        mutableStateOf((appVersionConfig?.latestVersionCode ?: (BuildConfig.VERSION_CODE + 1)).toString())
+    }
+    var versionNameInput by remember(appVersionConfig) {
+        mutableStateOf(appVersionConfig?.latestVersionName?.ifBlank { "1.0.1" } ?: "1.0.1")
+    }
+    var downloadUrlInput by remember(appVersionConfig) {
+        mutableStateOf(appVersionConfig?.downloadUrl.orEmpty())
+    }
+    var releaseNotesInput by remember(appVersionConfig) {
+        mutableStateOf(appVersionConfig?.releaseNotes.orEmpty())
+    }
+    var isMandatoryUpdate by remember(appVersionConfig) {
+        mutableStateOf(appVersionConfig?.isMandatory ?: false)
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -584,6 +604,148 @@ fun AdminSettingsDialog(
                             Icon(Icons.Default.Sync, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("مزامنة البيانات الآن", color = Color.White, fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
+                }
+
+                // In-App Remote Update Management Card (Firestore app_config/version)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, colors.goldAccent.copy(alpha = 0.45f), RoundedCornerShape(20.dp))
+                        .testTag("app_updates_settings_card"),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = colors.secondarySurface)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Column {
+                                Text("إدارة تحديثات التطبيق", fontWeight = FontWeight.ExtraBold, color = colors.textPrimary)
+                                Text(
+                                    text = "الإصدار المثبت حالياً: ${BuildConfig.VERSION_NAME} (كود ${BuildConfig.VERSION_CODE})",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colors.textSecondary
+                                )
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = versionCodeInput,
+                                onValueChange = { versionCodeInput = it.filter { ch -> ch.isDigit() } },
+                                label = { Text("كود الإصدار") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("settings_update_version_code"),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = colors.cardSurface,
+                                    unfocusedContainerColor = colors.cardSurface,
+                                    focusedBorderColor = colors.goldAccent,
+                                    unfocusedBorderColor = colors.cardBorder,
+                                    focusedTextColor = colors.textPrimary,
+                                    unfocusedTextColor = colors.textPrimary
+                                )
+                            )
+                            OutlinedTextField(
+                                value = versionNameInput,
+                                onValueChange = { versionNameInput = it },
+                                label = { Text("رقم الإصدار (مثال: 1.0.1)") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier
+                                    .weight(1.3f)
+                                    .testTag("settings_update_version_name"),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = colors.cardSurface,
+                                    unfocusedContainerColor = colors.cardSurface,
+                                    focusedBorderColor = colors.goldAccent,
+                                    unfocusedBorderColor = colors.cardBorder,
+                                    focusedTextColor = colors.textPrimary,
+                                    unfocusedTextColor = colors.textPrimary
+                                )
+                            )
+                        }
+
+                        OutlinedTextField(
+                            value = downloadUrlInput,
+                            onValueChange = { downloadUrlInput = it },
+                            label = { Text("رابط تحميل التحديث المباشر (APK URL)") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("settings_update_download_url"),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = colors.cardSurface,
+                                unfocusedContainerColor = colors.cardSurface,
+                                focusedBorderColor = colors.goldAccent,
+                                unfocusedBorderColor = colors.cardBorder,
+                                focusedTextColor = colors.textPrimary,
+                                unfocusedTextColor = colors.textPrimary
+                            )
+                        )
+
+                        OutlinedTextField(
+                            value = releaseNotesInput,
+                            onValueChange = { releaseNotesInput = it },
+                            label = { Text("ملاحظات الإصدار (ما الجديد؟)") },
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("settings_update_release_notes"),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = colors.cardSurface,
+                                unfocusedContainerColor = colors.cardSurface,
+                                focusedBorderColor = colors.goldAccent,
+                                unfocusedBorderColor = colors.cardBorder,
+                                focusedTextColor = colors.textPrimary,
+                                unfocusedTextColor = colors.textPrimary
+                            )
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("تحديث إجباري للعملاء", color = colors.textPrimary, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                            Switch(checked = isMandatoryUpdate, onCheckedChange = { isMandatoryUpdate = it })
+                        }
+
+                        Button(
+                            onClick = {
+                                val parsedCode = versionCodeInput.toIntOrNull() ?: 0
+                                onPublishAppVersion(
+                                    parsedCode,
+                                    versionNameInput,
+                                    downloadUrlInput,
+                                    releaseNotesInput,
+                                    isMandatoryUpdate
+                                )
+                            },
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 48.dp)
+                                .bounceClick()
+                                .testTag("publish_app_update_btn")
+                        ) {
+                            Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("نشر التحديث للعملاء", color = Color.White, fontWeight = FontWeight.ExtraBold)
                         }
                     }
                 }

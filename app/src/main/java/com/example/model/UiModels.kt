@@ -172,3 +172,16 @@ sealed class CloudSyncState {
     val lastError: String?
         get() = (this as? Error)?.message
 }
+
+data class AppVersionConfig(
+    val latestVersionCode: Int = 1,
+    val latestVersionName: String = "1.0.0",
+    val downloadUrl: String = "",
+    val releaseNotes: String = "",
+    val isMandatory: Boolean = false
+) {
+    fun isUpdateAvailable(installedVersionCode: Int): Boolean {
+        return latestVersionCode > installedVersionCode && downloadUrl.isNotBlank()
+    }
+}
+

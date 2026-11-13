@@ -2,6 +2,7 @@ package com.example.data
 
 import android.content.Context
 import com.example.model.AppUser
+import com.example.model.AppVersionConfig
 import com.example.model.CloudConfig
 import com.example.model.CloudSyncState
 import com.example.model.CustomerCartItem
@@ -72,6 +73,9 @@ class CloudSyncManager(
     private val _cloudCustomerOrders = MutableStateFlow<List<TrackedCloudOrder>>(emptyList())
     val cloudCustomerOrders: StateFlow<List<TrackedCloudOrder>> = _cloudCustomerOrders.asStateFlow()
 
+    private val _cloudVersionConfig = MutableStateFlow<AppVersionConfig?>(null)
+    val cloudVersionConfig: StateFlow<AppVersionConfig?> = _cloudVersionConfig.asStateFlow()
+
     private var firestore: FirebaseFirestore? = null
     private var activeConfig: CloudConfig? = null
     private var activeTrackedUserId: String = ""
@@ -79,6 +83,7 @@ class CloudSyncManager(
     private var menuCatsListener: ListenerRegistration? = null
     private var menuItemsListener: ListenerRegistration? = null
     private var storeSettingsListener: ListenerRegistration? = null
+    private var versionConfigListener: ListenerRegistration? = null
     private var ordersListener: ListenerRegistration? = null
     private var usersListener: ListenerRegistration? = null
     private var userOrdersListener: ListenerRegistration? = null
@@ -117,6 +122,7 @@ class CloudSyncManager(
 
             attachMenuListeners(db)
             attachStoreSettingsListener(db)
+            attachVersionConfigListener(db)
             if (enableAdminListeners) {
                 attachAdminOrdersListener(db)
                 attachAppUsersListener(db)
@@ -151,6 +157,7 @@ class CloudSyncManager(
         _cloudDeliveryZones.value = null
         _cloudAppUsers.value = emptyList()
         _cloudCustomerOrders.value = emptyList()
+        _cloudVersionConfig.value = null
         _syncState.value = CloudSyncState.LocalOffline
     }
 
@@ -158,6 +165,7 @@ class CloudSyncManager(
         menuCatsListener?.remove(); menuCatsListener = null
         menuItemsListener?.remove(); menuItemsListener = null
         storeSettingsListener?.remove(); storeSettingsListener = null
+        versionConfigListener?.remove(); versionConfigListener = null
         ordersListener?.remove(); ordersListener = null
         usersListener?.remove(); usersListener = null
         userOrdersListener?.remove(); userOrdersListener = null
@@ -197,7 +205,10 @@ class CloudSyncManager(
                     val items = snapshot.documents.mapNotNull { doc ->
                         val id = doc.getLong("id") ?: doc.id.toLongOrNull() ?: return@mapNotNull null
                         @Suppress("UNCHECKED_CAST")
-                        val rawPhotos = (doc.get("photos") as? List<*>)?.mapNotNull { it as? String }?.take(3)
+                        val rawPhotos = (doc.get("photos") as? List<*>)
+                            ?.mapNotNull { it as? String }
+                            ?.filter { it.isNotBlank() && !it.startsWith("content://", ignoreCase = true) }
+                            ?.take(3)
                             ?: emptyList()
                         MenuItemEntity(
                             id = id,
@@ -243,6 +254,27 @@ class CloudSyncManager(
                         _cloudDeliveryZones.value = parsed
                     }
                 }
+            }
+    }
+
+    private fun attachVersionConfigListener(db: FirebaseFirestore) {
+        versionConfigListener?.remove()
+        versionConfigListener = db.collection(COL_APP_CONFIG)
+            .document(DOC_VERSION)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null || !snapshot.exists()) return@addSnapshotListener
+                val latestCode = (snapshot.getLong("latestVersionCode") ?: 0L).toInt()
+                val latestName = snapshot.getString("latestVersionName")?.trim().orEmpty()
+                val downloadUrl = snapshot.getString("downloadUrl")?.trim().orEmpty()
+                val releaseNotes = snapshot.getString("releaseNotes")?.trim().orEmpty()
+                val isMandatory = snapshot.getBoolean("isMandatory") ?: false
+                _cloudVersionConfig.value = AppVersionConfig(
+                    latestVersionCode = latestCode,
+                    latestVersionName = latestName,
+                    downloadUrl = downloadUrl,
+                    releaseNotes = releaseNotes,
+                    isMandatory = isMandatory
+                )
             }
     }
 
@@ -568,7 +600,9 @@ class CloudSyncManager(
                         "isVariablePrice" to item.isVariablePrice,
                         "sortOrder" to item.sortOrder,
                         "isVisible" to item.isVisible,
-                        "photos" to item.photoList(),
+                        "photos" to item.photoList()
+                            .filter { it.isNotBlank() && !it.startsWith("content://", ignoreCase = true) }
+                            .take(3),
                         "isPopular" to item.isPopular,
                         "isPreOrder24h" to item.isPreOrder24h,
                         "ratingAvg" to item.ratingAvg,
@@ -700,6 +734,54 @@ class CloudSyncManager(
         }
     }
 
+    suspend fun publishAppVersionConfig(config: AppVersionConfig): Result<Unit> {
+        val db = firestore ?: return Result.failure(IllegalStateException("الربط السحابي غير مفعّل"))
+        return try {
+            db.collection(COL_APP_CONFIG)
+                .document(DOC_VERSION)
+                .set(
+                    mapOf(
+                        "latestVersionCode" to config.latestVersionCode,
+                        "latestVersionName" to config.latestVersionName.trim(),
+                        "downloadUrl" to config.downloadUrl.trim(),
+                        "releaseNotes" to config.releaseNotes.trim(),
+                        "isMandatory" to config.isMandatory,
+                        "updatedAt" to System.currentTimeMillis()
+                    ),
+                    SetOptions.merge()
+                )
+                .await()
+            _cloudVersionConfig.value = config
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun fetchVersionConfigOnce(): Result<AppVersionConfig?> {
+        val db = firestore ?: return Result.failure(IllegalStateException("تعذر الاتصال بالسحابة حالياً"))
+        return try {
+            val snapshot = db.collection(COL_APP_CONFIG)
+                .document(DOC_VERSION)
+                .get()
+                .await()
+            if (!snapshot.exists()) {
+                return Result.success(null)
+            }
+            val config = AppVersionConfig(
+                latestVersionCode = (snapshot.getLong("latestVersionCode") ?: 0L).toInt(),
+                latestVersionName = snapshot.getString("latestVersionName")?.trim().orEmpty(),
+                downloadUrl = snapshot.getString("downloadUrl")?.trim().orEmpty(),
+                releaseNotes = snapshot.getString("releaseNotes")?.trim().orEmpty(),
+                isMandatory = snapshot.getBoolean("isMandatory") ?: false
+            )
+            _cloudVersionConfig.value = config
+            Result.success(config)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     companion object {
         const val CLOUD_APP_NAME = "akleh_helwa_cloud"
         const val COL_MENU_CATEGORIES = "menu_categories"
@@ -708,6 +790,8 @@ class CloudSyncManager(
         const val COL_APP_USERS = "app_users"
         const val COL_STORE_SETTINGS = "store_settings"
         const val DOC_STORE_PROFILE = "profile"
+        const val COL_APP_CONFIG = "app_config"
+        const val DOC_VERSION = "version"
 
         fun getOrInitFirestore(
             context: Context,

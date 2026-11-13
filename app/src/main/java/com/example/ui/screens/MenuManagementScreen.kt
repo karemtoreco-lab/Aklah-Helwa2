@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,12 +35,14 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PostAdd
 import androidx.compose.material.icons.filled.RestaurantMenu
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -51,6 +55,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -75,8 +81,8 @@ import com.example.model.GeneratedMenuEntity
 import com.example.model.MenuCategoryEntity
 import com.example.model.MenuItemEntity
 import com.example.model.ProductEntity
-import com.example.ui.components.CachedBase64DishImage
-import com.example.ui.components.CategoryDishArtwork
+import com.example.ui.components.CulinaryPillChip
+import com.example.ui.components.SmartDishImage
 import com.example.ui.components.StaggeredAppearItem
 import com.example.ui.components.bounceClick
 import com.example.ui.theme.AppTheme
@@ -114,6 +120,8 @@ fun MenuManagementScreen(
 ) {
     val colors = AppTheme.colors
     var subTab by remember { mutableIntStateOf(0) }
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategoryFilterId by remember { mutableStateOf<Long?>(null) }
 
     var showCategoryDialog by remember { mutableStateOf(false) }
     var editingCategory by remember { mutableStateOf<MenuCategoryEntity?>(null) }
@@ -140,8 +148,22 @@ fun MenuManagementScreen(
     val sortedCategories by remember(menuCategories) {
         derivedStateOf { menuCategories.sortedBy { it.sortOrder } }
     }
-    val itemsByCat by remember(menuItems) {
-        derivedStateOf { menuItems.sortedBy { it.sortOrder }.groupBy { it.menuCategoryId } }
+    val filteredCategories by remember(sortedCategories, selectedCategoryFilterId) {
+        derivedStateOf {
+            if (selectedCategoryFilterId == null) {
+                sortedCategories
+            } else {
+                sortedCategories.filter { it.id == selectedCategoryFilterId }
+            }
+        }
+    }
+    val itemsByCat by remember(menuItems, searchQuery) {
+        derivedStateOf {
+            menuItems
+                .filter { searchQuery.isBlank() || it.displayName.contains(searchQuery, ignoreCase = true) }
+                .sortedBy { it.sortOrder }
+                .groupBy { it.menuCategoryId }
+        }
     }
     val liveEditingItem = remember(editingMenuItemId, menuItems) {
         editingMenuItemId?.let { id -> menuItems.find { it.id == id } }
@@ -238,379 +260,467 @@ fun MenuManagementScreen(
             .background(colors.backgroundGradient),
         contentAlignment = Alignment.TopCenter
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = 840.dp)
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-                .testTag("menu_management_screen")
-        ) {
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Pill Segmented Switcher
-            Surface(
-                color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
-                shape = RoundedCornerShape(50),
-                border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
-                modifier = Modifier.fillMaxWidth()
+        if (subTab == 0) {
+            // Single unified LazyColumn so top controls, search bar, horizontal category chips, and cards scroll cleanly together
+            LazyColumn(
+                modifier = Modifier
+                    .widthIn(max = 840.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .testTag("menu_management_screen"),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(top = 10.dp, bottom = 124.dp)
             ) {
-                Row(modifier = Modifier.padding(4.dp)) {
-                    SegmentedTabButton(
-                        title = "إدارة المنيو (${menuItems.size})",
-                        icon = Icons.Default.RestaurantMenu,
-                        selected = subTab == 0,
-                        onClick = { subTab = 0 },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("subtab_manage_menu")
-                    )
-                    SegmentedTabButton(
-                        title = "معاينة المنيو",
-                        icon = Icons.Default.Image,
-                        selected = subTab == 1,
-                        onClick = {
-                            subTab = 1
-                            onRefreshPreview()
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("subtab_preview_menu")
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            if (subTab == 0) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .defaultMinSize(minHeight = 50.dp)
-                        .wrapContentHeight()
-                        .shadow(6.dp, RoundedCornerShape(50))
-                        .clip(RoundedCornerShape(50))
-                        .background(colors.warmAccentGradient)
-                        .bounceClick {
-                            subTab = 1
-                            onExportAllPages {}
-                        }
-                        .padding(vertical = 12.dp, horizontal = 16.dp)
-                        .testTag("save_and_export_menu_btn"),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Download, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("حفظ وتصدير المنيو", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = {
-                            pickCatalogTargetMenuCatId = sortedCategories.firstOrNull()?.id
-                            showPickCatalogDialog = true
-                        },
-                        modifier = Modifier
-                            .defaultMinSize(minHeight = 48.dp)
-                            .bounceClick()
-                            .testTag("add_catalog_item_to_menu_btn"),
+                item(key = "menu_segmented_tabs") {
+                    Surface(
+                        color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
                         shape = RoundedCornerShape(50),
-                        border = BorderStroke(1.dp, colors.cardBorder)
+                        border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.PostAdd, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("من الأصناف", color = colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    OutlinedButton(
-                        onClick = { showAddManualDialog = true },
-                        modifier = Modifier
-                            .defaultMinSize(minHeight = 48.dp)
-                            .bounceClick()
-                            .testTag("add_manual_menu_item_btn"),
-                        shape = RoundedCornerShape(50),
-                        border = BorderStroke(1.dp, colors.cardBorder)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("صنف يدوي", color = colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            editingCategory = null
-                            showCategoryDialog = true
-                        },
-                        modifier = Modifier
-                            .defaultMinSize(minHeight = 48.dp)
-                            .bounceClick()
-                            .testTag("add_menu_category_btn"),
-                        shape = RoundedCornerShape(50),
-                        border = BorderStroke(1.dp, colors.cardBorder)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = colors.secondaryAccent, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("قسم جديد", color = colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 124.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    itemsIndexed(sortedCategories, key = { _, c -> c.id }) { catIdx, cat ->
-                        val catItems = itemsByCat[cat.id].orEmpty()
-
-                        StaggeredAppearItem(index = catIdx) {
-                            Card(
+                        Row(modifier = Modifier.padding(4.dp)) {
+                            SegmentedTabButton(
+                                title = "إدارة المنيو (${menuItems.size})",
+                                icon = Icons.Default.RestaurantMenu,
+                                selected = true,
+                                onClick = { subTab = 0 },
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(
-                                        1.dp,
-                                        if (colors.isDark) colors.glassBorder else colors.cardBorder,
-                                        RoundedCornerShape(20.dp)
-                                    )
-                                    .testTag("menu_category_card_${cat.id}"),
-                                shape = RoundedCornerShape(20.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface
-                                )
-                            ) {
-                                Column(modifier = Modifier.padding(14.dp)) {
-                                    FlowRow(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalArrangement = Arrangement.Center
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .background(colors.warmAccentGradient, RoundedCornerShape(50))
-                                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                                        ) {
-                                            Text(
-                                                text = "${cat.name} (${catItems.size})",
-                                                color = Color.White,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 12.sp,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
+                                    .weight(1f)
+                                    .testTag("subtab_manage_menu")
+                            )
+                            SegmentedTabButton(
+                                title = "معاينة المنيو",
+                                icon = Icons.Default.Image,
+                                selected = false,
+                                onClick = {
+                                    subTab = 1
+                                    onRefreshPreview()
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("subtab_preview_menu")
+                            )
+                        }
+                    }
+                }
 
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            IconButton(
-                                                onClick = { onMoveMenuCategory(cat, true) },
-                                                enabled = catIdx > 0,
-                                                modifier = Modifier.size(34.dp)
-                                            ) {
-                                                Icon(Icons.Default.ArrowUpward, contentDescription = "لأعلى", tint = colors.textPrimary, modifier = Modifier.size(16.dp))
-                                            }
-                                            IconButton(
-                                                onClick = { onMoveMenuCategory(cat, false) },
-                                                enabled = catIdx < sortedCategories.lastIndex,
-                                                modifier = Modifier.size(34.dp)
-                                            ) {
-                                                Icon(Icons.Default.ArrowDownward, contentDescription = "لأسفل", tint = colors.textPrimary, modifier = Modifier.size(16.dp))
-                                            }
-                                            IconButton(
-                                                onClick = { onUpdateMenuCategory(cat.copy(isVisible = !cat.isVisible)) },
-                                                modifier = Modifier.size(34.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = if (cat.isVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                                    contentDescription = "إظهار/إخفاء القسم",
-                                                    tint = if (cat.isVisible) colors.goldAccent else colors.textSecondary,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                            }
-                                            IconButton(
-                                                onClick = {
-                                                    editingCategory = cat
-                                                    showCategoryDialog = true
-                                                },
-                                                modifier = Modifier.size(34.dp)
-                                            ) {
-                                                Icon(Icons.Default.Edit, contentDescription = "تعديل القسم", tint = colors.textSecondary, modifier = Modifier.size(16.dp))
-                                            }
-                                            IconButton(
-                                                onClick = { onDeleteMenuCategory(cat) },
-                                                modifier = Modifier.size(34.dp)
-                                            ) {
-                                                Icon(Icons.Default.Delete, contentDescription = "حذف القسم", tint = colors.primaryBrand, modifier = Modifier.size(16.dp))
-                                            }
-                                        }
+                item(key = "export_menu_cta") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .defaultMinSize(minHeight = 50.dp)
+                            .wrapContentHeight()
+                            .shadow(6.dp, RoundedCornerShape(50))
+                            .clip(RoundedCornerShape(50))
+                            .background(colors.warmAccentGradient)
+                            .bounceClick {
+                                subTab = 1
+                                onExportAllPages {}
+                            }
+                            .padding(vertical = 12.dp, horizontal = 16.dp)
+                            .testTag("save_and_export_menu_btn"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Download, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("حفظ وتصدير المنيو", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        }
+                    }
+                }
+
+                item(key = "menu_actions_row") {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(vertical = 2.dp)
+                    ) {
+                        item {
+                            OutlinedButton(
+                                onClick = {
+                                    pickCatalogTargetMenuCatId = sortedCategories.firstOrNull()?.id
+                                    showPickCatalogDialog = true
+                                },
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .bounceClick()
+                                    .testTag("add_catalog_item_to_menu_btn"),
+                                shape = RoundedCornerShape(50),
+                                border = BorderStroke(1.dp, colors.cardBorder)
+                            ) {
+                                Icon(Icons.Default.PostAdd, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("من الأصناف", color = colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        item {
+                            OutlinedButton(
+                                onClick = { showAddManualDialog = true },
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .bounceClick()
+                                    .testTag("add_manual_menu_item_btn"),
+                                shape = RoundedCornerShape(50),
+                                border = BorderStroke(1.dp, colors.cardBorder)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("صنف يدوي", color = colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        item {
+                            OutlinedButton(
+                                onClick = {
+                                    editingCategory = null
+                                    showCategoryDialog = true
+                                },
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .bounceClick()
+                                    .testTag("add_menu_category_btn"),
+                                shape = RoundedCornerShape(50),
+                                border = BorderStroke(1.dp, colors.cardBorder)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, tint = colors.secondaryAccent, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("قسم جديد", color = colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+
+                item(key = "menu_search_bar") {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("ابحث عن صنف داخل المنيو...", color = colors.textSecondary) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = colors.primaryBrand) },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "مسح البحث", tint = colors.textSecondary)
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(18.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("menu_search_input"),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface,
+                            unfocusedContainerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface,
+                            focusedBorderColor = colors.primaryBrand,
+                            unfocusedBorderColor = colors.cardBorder,
+                            focusedTextColor = colors.textPrimary,
+                            unfocusedTextColor = colors.textPrimary
+                        )
+                    )
+                }
+
+                item(key = "menu_category_filter_row") {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(vertical = 2.dp)
+                    ) {
+                        item(key = "all_menu_cats") {
+                            CulinaryPillChip(
+                                label = "كل الأقسام",
+                                selected = selectedCategoryFilterId == null,
+                                onClick = { selectedCategoryFilterId = null }
+                            )
+                        }
+                        items(sortedCategories, key = { "chip_${it.id}" }) { cat ->
+                            CulinaryPillChip(
+                                label = cat.name,
+                                selected = selectedCategoryFilterId == cat.id,
+                                onClick = {
+                                    selectedCategoryFilterId = if (selectedCategoryFilterId == cat.id) null else cat.id
+                                }
+                            )
+                        }
+                    }
+                }
+
+                itemsIndexed(filteredCategories, key = { _, c -> c.id }) { catIdx, cat ->
+                    val catItems = itemsByCat[cat.id].orEmpty()
+                    val globalCatIdx = sortedCategories.indexOfFirst { it.id == cat.id }
+
+                    StaggeredAppearItem(index = catIdx) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(
+                                    1.dp,
+                                    if (colors.isDark) colors.glassBorder else colors.cardBorder,
+                                    RoundedCornerShape(20.dp)
+                                )
+                                .testTag("menu_category_card_${cat.id}"),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .background(colors.warmAccentGradient, RoundedCornerShape(50))
+                                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = "${cat.name} (${catItems.size})",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
 
-                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        IconButton(
+                                            onClick = { onMoveMenuCategory(cat, true) },
+                                            enabled = globalCatIdx > 0,
+                                            modifier = Modifier.size(34.dp)
+                                        ) {
+                                            Icon(Icons.Default.ArrowUpward, contentDescription = "لأعلى", tint = colors.textPrimary, modifier = Modifier.size(16.dp))
+                                        }
+                                        IconButton(
+                                            onClick = { onMoveMenuCategory(cat, false) },
+                                            enabled = globalCatIdx in 0 until sortedCategories.lastIndex,
+                                            modifier = Modifier.size(34.dp)
+                                        ) {
+                                            Icon(Icons.Default.ArrowDownward, contentDescription = "لأسفل", tint = colors.textPrimary, modifier = Modifier.size(16.dp))
+                                        }
+                                        IconButton(
+                                            onClick = { onUpdateMenuCategory(cat.copy(isVisible = !cat.isVisible)) },
+                                            modifier = Modifier.size(34.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = if (cat.isVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                                contentDescription = "إظهار/إخفاء القسم",
+                                                tint = if (cat.isVisible) colors.goldAccent else colors.textSecondary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = {
+                                                editingCategory = cat
+                                                showCategoryDialog = true
+                                            },
+                                            modifier = Modifier.size(34.dp)
+                                        ) {
+                                            Icon(Icons.Default.Edit, contentDescription = "تعديل القسم", tint = colors.textSecondary, modifier = Modifier.size(16.dp))
+                                        }
+                                        IconButton(
+                                            onClick = { onDeleteMenuCategory(cat) },
+                                            modifier = Modifier.size(34.dp)
+                                        ) {
+                                            Icon(Icons.Default.Delete, contentDescription = "حذف القسم", tint = colors.primaryBrand, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                }
 
-                                    if (catItems.isEmpty()) {
-                                        Text("لا توجد أصناف منشورة في هذا القسم حالياً", style = MaterialTheme.typography.bodySmall, color = colors.textSecondary)
-                                    } else {
-                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            catItems.forEachIndexed { idx, item ->
-                                                val photos = item.photoList()
-                                                val localThumb = photos.firstOrNull() ?: item.productId?.let { primaryImages[it] }
-                                                Surface(
-                                                    color = colors.secondarySurface,
-                                                    shape = RoundedCornerShape(16.dp),
-                                                    border = BorderStroke(1.dp, colors.cardBorder),
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                if (catItems.isEmpty()) {
+                                    Text(
+                                        text = if (searchQuery.isNotBlank()) "لا توجد أصناف مطابقة للبحث في هذا القسم" else "لا توجد أصناف منشورة في هذا القسم حالياً",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = colors.textSecondary
+                                    )
+                                } else {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        catItems.forEachIndexed { idx, item ->
+                                            val photos = item.photoList()
+                                            val localThumb = photos.firstOrNull() ?: item.productId?.let { primaryImages[it] }
+                                            Surface(
+                                                color = colors.secondarySurface,
+                                                shape = RoundedCornerShape(16.dp),
+                                                border = BorderStroke(1.dp, colors.cardBorder),
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .wrapContentHeight()
+                                                    .bounceClick { editingMenuItemId = item.id }
+                                                    .testTag("menu_item_row_${item.id}")
+                                            ) {
+                                                Row(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
-                                                        .wrapContentHeight()
-                                                        .bounceClick { editingMenuItemId = item.id }
-                                                        .testTag("menu_item_row_${item.id}")
+                                                        .padding(horizontal = 10.dp, vertical = 9.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
                                                 ) {
-                                                    Row(
+                                                    Box(
                                                         modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(horizontal = 10.dp, vertical = 9.dp),
-                                                        verticalAlignment = Alignment.CenterVertically
+                                                            .size(48.dp)
+                                                            .clip(RoundedCornerShape(12.dp))
+                                                            .border(1.dp, colors.cardBorder, RoundedCornerShape(12.dp))
                                                     ) {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .size(44.dp)
-                                                                .clip(RoundedCornerShape(12.dp))
-                                                                .border(1.dp, colors.cardBorder, RoundedCornerShape(12.dp))
+                                                        SmartDishImage(
+                                                            imageSource = localThumb,
+                                                            contentDescription = item.displayName,
+                                                            categoryName = cat.name,
+                                                            fallbackIconSize = 20.dp,
+                                                            modifier = Modifier.fillMaxSize()
+                                                        )
+                                                    }
+
+                                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                                    Column(modifier = Modifier.weight(1f)) {
+                                                        Text(
+                                                            text = item.displayName,
+                                                            color = if (item.isVisible) colors.textPrimary else colors.textSecondary,
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 13.sp,
+                                                            maxLines = 2,
+                                                            overflow = TextOverflow.Ellipsis
+                                                        )
+                                                        Row(
+                                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                            verticalAlignment = Alignment.CenterVertically
                                                         ) {
-                                                            if (!localThumb.isNullOrBlank()) {
-                                                                CachedBase64DishImage(
-                                                                    base64OrPath = localThumb,
-                                                                    contentDescription = item.displayName,
-                                                                    categoryName = cat.name,
-                                                                    fallbackIconSize = 20.dp,
-                                                                    modifier = Modifier.fillMaxSize()
-                                                                )
+                                                            Text(
+                                                                text = "\uD83D\uDCF7 ${photos.size}/3",
+                                                                fontSize = 10.sp,
+                                                                color = if (photos.isNotEmpty()) colors.profitGreen else colors.textSecondary,
+                                                                fontWeight = FontWeight.Bold
+                                                            )
+                                                            if (item.isPopular) {
+                                                                Text("مميز \uD83D\uDD25", fontSize = 10.sp, color = colors.goldAccent, fontWeight = FontWeight.Bold)
+                                                            }
+                                                            if (item.isPreOrder24h) {
+                                                                Text("24 ساعة", fontSize = 10.sp, color = colors.secondaryAccent)
+                                                            }
+                                                            if (!item.isVisible) {
+                                                                Text("مخفي", fontSize = 10.sp, color = colors.primaryBrand)
+                                                            }
+                                                        }
+                                                    }
+
+                                                    Surface(
+                                                        color = colors.primaryBrand,
+                                                        shape = RoundedCornerShape(50),
+                                                        modifier = Modifier.padding(horizontal = 4.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = if (item.isVariablePrice && item.publishedPrice <= 0.0) {
+                                                                "حسب السعر"
                                                             } else {
-                                                                CategoryDishArtwork(
-                                                                    categoryName = cat.name,
-                                                                    itemName = item.displayName,
-                                                                    iconSize = 20.dp,
-                                                                    modifier = Modifier.fillMaxSize()
-                                                                )
-                                                            }
-                                                        }
-
-                                                        Spacer(modifier = Modifier.width(8.dp))
-
-                                                        Column(modifier = Modifier.weight(1f)) {
-                                                            Text(
-                                                                text = item.displayName,
-                                                                color = if (item.isVisible) colors.textPrimary else colors.textSecondary,
-                                                                fontWeight = FontWeight.Bold,
-                                                                fontSize = 13.sp,
-                                                                maxLines = 2,
-                                                                overflow = TextOverflow.Ellipsis
-                                                            )
-                                                            Row(
-                                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                                verticalAlignment = Alignment.CenterVertically
-                                                            ) {
-                                                                Text(
-                                                                    text = "\uD83D\uDCF7 ${photos.size}/3",
-                                                                    fontSize = 10.sp,
-                                                                    color = if (photos.isNotEmpty()) colors.profitGreen else colors.textSecondary,
-                                                                    fontWeight = FontWeight.Bold
-                                                                )
-                                                                if (item.isPopular) {
-                                                                    Text("مميز \uD83D\uDD25", fontSize = 10.sp, color = colors.goldAccent, fontWeight = FontWeight.Bold)
-                                                                }
-                                                                if (item.isPreOrder24h) {
-                                                                    Text("24 ساعة", fontSize = 10.sp, color = colors.secondaryAccent)
-                                                                }
-                                                                if (!item.isVisible) {
-                                                                    Text("مخفي", fontSize = 10.sp, color = colors.primaryBrand)
-                                                                }
-                                                            }
-                                                        }
-
-                                                        Surface(
-                                                            color = colors.primaryBrand,
-                                                            shape = RoundedCornerShape(50),
-                                                            modifier = Modifier.padding(horizontal = 4.dp)
-                                                        ) {
-                                                            Text(
-                                                                text = if (item.isVariablePrice && item.publishedPrice <= 0.0) {
-                                                                    "حسب السعر"
-                                                                } else {
-                                                                    DateUtils.formatCurrency(item.publishedPrice)
-                                                                },
-                                                                color = Color.White,
-                                                                fontWeight = FontWeight.Bold,
-                                                                fontSize = 11.sp,
-                                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                                            )
-                                                        }
-
-                                                        IconButton(
-                                                            onClick = {
-                                                                quickPhotoTargetItem = item
-                                                                quickPhotoPicker.launch(
-                                                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                                                )
+                                                                DateUtils.formatCurrency(item.publishedPrice)
                                                             },
-                                                            modifier = Modifier.size(32.dp)
-                                                        ) {
-                                                            Icon(
-                                                                Icons.Default.AddPhotoAlternate,
-                                                                contentDescription = "رفع صور للطيق",
-                                                                tint = colors.goldAccent,
-                                                                modifier = Modifier.size(17.dp)
-                                                            )
-                                                        }
+                                                            color = Color.White,
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 11.sp,
+                                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                                        )
+                                                    }
 
-                                                        IconButton(
-                                                            onClick = { onMoveMenuItem(item, true) },
-                                                            enabled = idx > 0,
-                                                            modifier = Modifier.size(28.dp)
-                                                        ) {
-                                                            Icon(Icons.Default.ArrowUpward, contentDescription = "لأعلى", tint = colors.textPrimary, modifier = Modifier.size(14.dp))
-                                                        }
-                                                        IconButton(
-                                                            onClick = { onMoveMenuItem(item, false) },
-                                                            enabled = idx < catItems.lastIndex,
-                                                            modifier = Modifier.size(28.dp)
-                                                        ) {
-                                                            Icon(Icons.Default.ArrowDownward, contentDescription = "لأسفل", tint = colors.textPrimary, modifier = Modifier.size(14.dp))
-                                                        }
-                                                        IconButton(
-                                                            onClick = { removingMenuItem = item },
-                                                            modifier = Modifier.size(28.dp)
-                                                        ) {
-                                                            Icon(Icons.Default.Delete, contentDescription = "إزالة من المنيو", tint = colors.primaryBrand, modifier = Modifier.size(15.dp))
-                                                        }
+                                                    IconButton(
+                                                        onClick = {
+                                                            quickPhotoTargetItem = item
+                                                            quickPhotoPicker.launch(
+                                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                                            )
+                                                        },
+                                                        modifier = Modifier.size(34.dp)
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Default.AddPhotoAlternate,
+                                                            contentDescription = "رفع صور للطبق",
+                                                            tint = colors.goldAccent,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+
+                                                    IconButton(
+                                                        onClick = { onMoveMenuItem(item, true) },
+                                                        enabled = idx > 0,
+                                                        modifier = Modifier.size(28.dp)
+                                                    ) {
+                                                        Icon(Icons.Default.ArrowUpward, contentDescription = "لأعلى", tint = colors.textPrimary, modifier = Modifier.size(14.dp))
+                                                    }
+                                                    IconButton(
+                                                        onClick = { onMoveMenuItem(item, false) },
+                                                        enabled = idx < catItems.lastIndex,
+                                                        modifier = Modifier.size(28.dp)
+                                                    ) {
+                                                        Icon(Icons.Default.ArrowDownward, contentDescription = "لأسفل", tint = colors.textPrimary, modifier = Modifier.size(14.dp))
+                                                    }
+                                                    IconButton(
+                                                        onClick = { removingMenuItem = item },
+                                                        modifier = Modifier.size(28.dp)
+                                                    ) {
+                                                        Icon(Icons.Default.Delete, contentDescription = "إزالة من المنيو", tint = colors.primaryBrand, modifier = Modifier.size(15.dp))
                                                     }
                                                 }
                                             }
                                         }
                                     }
+                                }
 
-                                    HorizontalDivider(modifier = Modifier.padding(top = 10.dp, bottom = 4.dp), color = colors.cardBorder)
-                                    TextButton(
-                                        onClick = {
-                                            pickCatalogTargetMenuCatId = cat.id
-                                            showPickCatalogDialog = true
-                                        }
-                                    ) {
-                                        Icon(Icons.Default.Add, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(16.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("إضافة صنف لهذا القسم", color = colors.primaryBrand, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                HorizontalDivider(modifier = Modifier.padding(top = 10.dp, bottom = 4.dp), color = colors.cardBorder)
+                                TextButton(
+                                    onClick = {
+                                        pickCatalogTargetMenuCatId = cat.id
+                                        showPickCatalogDialog = true
                                     }
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("إضافة صنف لهذا القسم", color = colors.primaryBrand, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
                     }
                 }
-            } else {
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 840.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .testTag("menu_management_screen")
+            ) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Surface(
+                    color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(modifier = Modifier.padding(4.dp)) {
+                        SegmentedTabButton(
+                            title = "إدارة المنيو (${menuItems.size})",
+                            icon = Icons.Default.RestaurantMenu,
+                            selected = false,
+                            onClick = { subTab = 0 },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("subtab_manage_menu")
+                        )
+                        SegmentedTabButton(
+                            title = "معاينة المنيو",
+                            icon = Icons.Default.Image,
+                            selected = true,
+                            onClick = {
+                                subTab = 1
+                                onRefreshPreview()
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("subtab_preview_menu")
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
                 MenuPreviewSection(
                     menuCategories = sortedCategories,
                     previewBitmaps = previewBitmaps,

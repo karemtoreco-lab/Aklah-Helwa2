@@ -27,8 +27,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,10 +42,15 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.example.ui.theme.AppTheme
-import com.example.util.Base64ImageUtils
+import com.example.util.ImageUtils
+import java.io.File
 
 private data class CategoryVisualStyle(
     val gradientColors: List<Color>,
@@ -58,43 +65,43 @@ private fun rememberCategoryVisualStyle(categoryName: String, itemName: String):
         when {
             combined.contains("محاشي") || combined.contains("محشي") || combined.contains("ورق عنب") || combined.contains("كرنب") ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF1F4E3D), Color(0xFF3E6B2E), Color(0xFFD97B1C)),
+                    gradientColors = listOf(Color(0xFF1A4332), Color(0xFF2D6A4F), Color(0xFFD97B1C)),
                     accentColor = Color(0xFFFFD166),
                     icon = Icons.Default.Spa
                 )
             combined.contains("قبل الحشو") || combined.contains("متقورة") || combined.contains("مقور") ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF47371D), Color(0xFF8C5D19), Color(0xFFD9902B)),
+                    gradientColors = listOf(Color(0xFF3E311B), Color(0xFF8C5D19), Color(0xFFD9902B)),
                     accentColor = Color(0xFFFFDE8A),
                     icon = Icons.Default.Restaurant
                 )
             combined.contains("خضار") || combined.contains("سبانخ") || combined.contains("فاصوليا") || combined.contains("بامية") || combined.contains("بسلة") ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF124734), Color(0xFF1E7E57), Color(0xFF56AB54)),
+                    gradientColors = listOf(Color(0xFF103E2E), Color(0xFF1B6E4E), Color(0xFF4CA456)),
                     accentColor = Color(0xFFA7F3D0),
                     icon = Icons.Default.Eco
                 )
             combined.contains("تتبيلات") || combined.contains("بانيه") || combined.contains("استربس") || combined.contains("شيش") || combined.contains("شاورما") || combined.contains("كفتة") || combined.contains("حواوشي") ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF5A1E0C), Color(0xFFB3390E), Color(0xFFFF7A1A)),
+                    gradientColors = listOf(Color(0xFF4A180E), Color(0xFFA63612), Color(0xFFFF8C24)),
                     accentColor = Color(0xFFFFD580),
                     icon = Icons.Default.LocalFireDepartment
                 )
             combined.contains("فراخ") || combined.contains("دباس") || combined.contains("وراك") || combined.contains("أجنحة") ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF5C310C), Color(0xFFAE5E13), Color(0xFFEFA133)),
+                    gradientColors = listOf(Color(0xFF49290C), Color(0xFF9E5614), Color(0xFFEFA133)),
                     accentColor = Color(0xFFFFECC2),
                     icon = Icons.Default.SetMeal
                 )
             combined.contains("صلصات") || combined.contains("صلصة") || combined.contains("تسيكة") ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF5D1318), Color(0xFFA62028), Color(0xFFE05232)),
+                    gradientColors = listOf(Color(0xFF4F1319), Color(0xFF991F28), Color(0xFFE05232)),
                     accentColor = Color(0xFFFFC8A2),
                     icon = Icons.Default.SoupKitchen
                 )
             else ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF3E1F13), Color(0xFF913E11), Color(0xFFE65C00)),
+                    gradientColors = listOf(Color(0xFF232936), Color(0xFF6B3410), Color(0xFFE65100)),
                     accentColor = Color(0xFFFFD180),
                     icon = Icons.Default.Restaurant
                 )
@@ -103,7 +110,7 @@ private fun rememberCategoryVisualStyle(categoryName: String, itemName: String):
 }
 
 /**
- * Rich Category-Tailored Default Dish Illustration with subtle culinary cloche rings & crest.
+ * Rich Category-Tailored Default Dish Illustration used strictly when no real photo is available.
  */
 @Composable
 fun CategoryDishArtwork(
@@ -160,8 +167,100 @@ fun CategoryDishArtwork(
 }
 
 /**
+ * Unified Smart Dish Image renderer:
+ * - Decodes `"data:image/..."` or Base64 strings into a cached [ImageBitmap] (`ContentScale.Crop`).
+ * - Loads `http://`, `https://`, or internal file paths via Coil [AsyncImage].
+ * - Displays the category-tailored [CategoryDishArtwork] ONLY when the image source is empty or fails to load.
+ */
+@Composable
+fun SmartDishImage(
+    imageSource: String?,
+    contentDescription: String,
+    categoryName: String = "",
+    fallbackIconSize: Dp = 32.dp,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val cleanSource = remember(imageSource) {
+        imageSource?.trim()?.takeIf {
+            it.isNotBlank() && !it.startsWith("content://", ignoreCase = true)
+        }
+    }
+
+    val isRemoteUrl = remember(cleanSource) {
+        cleanSource != null && (
+            cleanSource.startsWith("http://", ignoreCase = true) ||
+                cleanSource.startsWith("https://", ignoreCase = true)
+            )
+    }
+    val isLocalFile = remember(cleanSource) {
+        cleanSource != null && cleanSource.startsWith("/") && File(cleanSource).exists()
+    }
+    val isBase64 = remember(cleanSource, isRemoteUrl, isLocalFile) {
+        cleanSource != null && !isRemoteUrl && !isLocalFile && ImageUtils.isBase64OrDataUri(cleanSource)
+    }
+
+    val decodedBitmap: ImageBitmap? by produceState(
+        initialValue = if (isBase64) ImageUtils.getCachedImageBitmap(cleanSource) else null,
+        key1 = cleanSource,
+        key2 = isBase64
+    ) {
+        value = if (isBase64) ImageUtils.decodeToImageBitmap(cleanSource) else null
+    }
+
+    var coilLoadFailed by remember(cleanSource) { mutableStateOf(false) }
+
+    val coilRequest = remember(cleanSource, isRemoteUrl, isLocalFile) {
+        when {
+            isRemoteUrl -> ImageRequest.Builder(context)
+                .data(cleanSource)
+                .crossfade(true)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .diskCachePolicy(CachePolicy.ENABLED)
+                .build()
+            isLocalFile -> ImageRequest.Builder(context)
+                .data(File(cleanSource!!))
+                .size(640)
+                .crossfade(true)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .diskCachePolicy(CachePolicy.ENABLED)
+                .build()
+            else -> null
+        }
+    }
+
+    when {
+        decodedBitmap != null -> {
+            Image(
+                bitmap = decodedBitmap!!,
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Crop,
+                modifier = modifier
+            )
+        }
+        coilRequest != null && !coilLoadFailed -> {
+            AsyncImage(
+                model = coilRequest,
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Crop,
+                onError = { coilLoadFailed = true },
+                modifier = modifier
+            )
+        }
+        else -> {
+            CategoryDishArtwork(
+                categoryName = categoryName,
+                itemName = contentDescription,
+                iconSize = fallbackIconSize,
+                modifier = modifier
+            )
+        }
+    }
+}
+
+/**
  * Displays either a category-tailored gourmet visual when [photos] is empty,
- * or a cached async-decoded single/multi-photo swipeable HorizontalPager (1–3 photos) with page dots.
+ * or a swipeable HorizontalPager (1–3 photos) backed by [SmartDishImage] with page indicator dots.
  */
 @Composable
 fun DishPhotoCarousel(
@@ -173,34 +272,37 @@ fun DishPhotoCarousel(
     fallbackIconSize: Dp = 34.dp
 ) {
     val colors = AppTheme.colors
+    val validPhotos = remember(photos) {
+        photos.filter { it.isNotBlank() && !it.startsWith("content://", ignoreCase = true) }.take(3)
+    }
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(cornerRadius))
             .background(colors.secondarySurface)
     ) {
-        if (photos.isEmpty()) {
+        if (validPhotos.isEmpty()) {
             CategoryDishArtwork(
                 categoryName = categoryName,
                 itemName = itemName,
                 iconSize = fallbackIconSize,
                 modifier = Modifier.fillMaxSize()
             )
-        } else if (photos.size == 1) {
-            CachedBase64DishImage(
-                base64OrPath = photos.first(),
+        } else if (validPhotos.size == 1) {
+            SmartDishImage(
+                imageSource = validPhotos.first(),
                 contentDescription = itemName,
                 categoryName = categoryName,
                 fallbackIconSize = fallbackIconSize,
                 modifier = Modifier.fillMaxSize()
             )
         } else {
-            val pagerState = rememberPagerState(pageCount = { photos.size })
+            val pagerState = rememberPagerState(pageCount = { validPhotos.size })
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize()
             ) { page ->
-                CachedBase64DishImage(
-                    base64OrPath = photos[page],
+                SmartDishImage(
+                    imageSource = validPhotos[page],
                     contentDescription = "$itemName - صورة ${page + 1}",
                     categoryName = categoryName,
                     fallbackIconSize = fallbackIconSize,
@@ -212,12 +314,12 @@ fun DishPhotoCarousel(
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 8.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(Color.Black.copy(alpha = 0.48f))
+                    .background(Color.Black.copy(alpha = 0.52f))
                     .padding(horizontal = 8.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                repeat(photos.size) { idx ->
+                repeat(validPhotos.size) { idx ->
                     val dotColor by animateColorAsState(
                         targetValue = if (pagerState.currentPage == idx) colors.goldAccent else Color.White.copy(alpha = 0.45f),
                         animationSpec = tween(200),
@@ -243,26 +345,11 @@ fun CachedBase64DishImage(
     fallbackIconSize: Dp = 32.dp,
     modifier: Modifier = Modifier
 ) {
-    val decoded: ImageBitmap? by produceState(
-        initialValue = Base64ImageUtils.getCachedBitmap(base64OrPath),
-        key1 = base64OrPath
-    ) {
-        value = Base64ImageUtils.decodeToImageBitmap(base64OrPath)
-    }
-
-    if (decoded != null) {
-        Image(
-            bitmap = decoded!!,
-            contentDescription = contentDescription,
-            contentScale = ContentScale.Crop,
-            modifier = modifier
-        )
-    } else {
-        CategoryDishArtwork(
-            categoryName = categoryName,
-            itemName = contentDescription,
-            iconSize = fallbackIconSize,
-            modifier = modifier
-        )
-    }
+    SmartDishImage(
+        imageSource = base64OrPath,
+        contentDescription = contentDescription,
+        categoryName = categoryName,
+        fallbackIconSize = fallbackIconSize,
+        modifier = modifier
+    )
 }

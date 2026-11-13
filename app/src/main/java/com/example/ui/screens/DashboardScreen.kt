@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Card
@@ -110,6 +111,7 @@ fun DashboardScreen(
     onNavigateToAnalytics: () -> Unit,
     onOpenAddOrderDialog: () -> Unit,
     onOrderClick: (Order) -> Unit,
+    onCheckForUpdates: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = AppTheme.colors
@@ -174,22 +176,58 @@ fun DashboardScreen(
                     )
                 }
 
-                Surface(
-                    color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
-                    shape = RoundedCornerShape(50),
-                    border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
-                    shadowElevation = if (colors.isDark) 0.dp else 2.dp
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                    Surface(
+                        onClick = onCheckForUpdates,
+                        color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
+                        shape = RoundedCornerShape(50),
+                        border = BorderStroke(1.dp, colors.goldAccent.copy(alpha = 0.55f)),
+                        modifier = Modifier
+                            .defaultMinSize(minHeight = 40.dp)
+                            .bounceClick()
+                            .testTag("admin_check_updates_btn")
                     ) {
-                        IconButton(onClick = onNextMonth, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "التالي", tint = colors.primaryBrand, modifier = Modifier.size(16.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SystemUpdate,
+                                contentDescription = "التحقق من التحديثات",
+                                tint = colors.goldAccent,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "التحقق من التحديثات",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = colors.textPrimary,
+                                maxLines = 1
+                            )
                         }
-                        Text(monthTitle, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = colors.textPrimary)
-                        IconButton(onClick = onPreviousMonth, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "السابق", tint = colors.primaryBrand, modifier = Modifier.size(16.dp))
+                    }
+
+                    Surface(
+                        color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
+                        shape = RoundedCornerShape(50),
+                        border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
+                        shadowElevation = if (colors.isDark) 0.dp else 2.dp
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                        ) {
+                            IconButton(onClick = onNextMonth, modifier = Modifier.size(36.dp)) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "التالي", tint = colors.primaryBrand, modifier = Modifier.size(16.dp))
+                            }
+                            Text(monthTitle, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+                            IconButton(onClick = onPreviousMonth, modifier = Modifier.size(36.dp)) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "السابق", tint = colors.primaryBrand, modifier = Modifier.size(16.dp))
+                            }
                         }
                     }
                 }

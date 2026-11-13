@@ -1,5 +1,8 @@
 package com.example.ui.screens
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,7 +26,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocalFireDepartment
@@ -33,6 +35,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,12 +52,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.model.MenuItemEntity
 import com.example.ui.components.CulinaryQuantityStepper
 import com.example.ui.components.DishPhotoCarousel
@@ -79,6 +85,14 @@ fun DishDetailsBottomSheet(
     val haptic = LocalHapticFeedback.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var quantity by remember(menuItem.id) { mutableDoubleStateOf(1.0) }
+    val favScale by animateFloatAsState(
+        targetValue = if (isFavorite) 1.16f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "sheet_fav_bounce"
+    )
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -100,7 +114,7 @@ fun DishDetailsBottomSheet(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(230.dp)
+                    .height(240.dp)
             ) {
                 DishPhotoCarousel(
                     photos = photos,
@@ -113,6 +127,18 @@ fun DishDetailsBottomSheet(
                         .border(1.dp, colors.cardBorder, RoundedCornerShape(24.dp))
                 )
 
+                // Subtle bottom scrim for depth
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, Color.Transparent, Color.Black.copy(alpha = 0.25f))
+                            )
+                        )
+                )
+
                 // Top Badges Row
                 Row(
                     modifier = Modifier
@@ -123,7 +149,7 @@ fun DishDetailsBottomSheet(
                 ) {
                     if (menuItem.isPopular) {
                         Surface(
-                            color = colors.primaryBrand,
+                            color = colors.goldAccent,
                             shape = RoundedCornerShape(50),
                             shadowElevation = 4.dp
                         ) {
@@ -131,9 +157,9 @@ fun DishDetailsBottomSheet(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.LocalFireDepartment, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                Icon(Icons.Default.LocalFireDepartment, contentDescription = null, tint = Color(0xFF1A1614), modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("الأكثر طلباً", color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+                                Text("الأكثر طلباً", color = Color(0xFF1A1614), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
                             }
                         }
                     } else {
@@ -147,9 +173,13 @@ fun DishDetailsBottomSheet(
                         },
                         modifier = Modifier
                             .size(44.dp)
+                            .graphicsLayer {
+                                scaleX = favScale
+                                scaleY = favScale
+                            }
                             .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.52f))
-                            .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
+                            .background(Color.Black.copy(alpha = 0.56f))
+                            .border(1.dp, Color.White.copy(alpha = 0.35f), CircleShape)
                             .testTag("dish_sheet_favorite_btn")
                     ) {
                         Icon(
@@ -169,12 +199,19 @@ fun DishDetailsBottomSheet(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     if (categoryName.isNotBlank()) {
-                        Text(
-                            text = categoryName,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = colors.primaryBrand
-                        )
+                        Surface(
+                            color = colors.primaryContainer,
+                            shape = RoundedCornerShape(50),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        ) {
+                            Text(
+                                text = categoryName,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = colors.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                            )
+                        }
                     }
                     Text(
                         text = menuItem.displayName,
@@ -261,13 +298,24 @@ fun DishDetailsBottomSheet(
                 }
             }
 
-            Text(
-                text = menuItem.description.ifBlank {
-                    "تجهيز بيتي طازج يومياً بمكونات طبيعية مضمونة ونظافة تامة من مطبخ أ/ نهى ماهر."
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.textSecondary
-            )
+            Surface(
+                color = colors.secondarySurface,
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, colors.cardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = menuItem.description.ifBlank {
+                        "تجهيز بيتي طازج يومياً بمكونات طبيعية مضمونة ونظافة تامة من مطبخ أ/ نهى ماهر."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.textPrimary,
+                    lineHeight = 22.sp,
+                    modifier = Modifier.padding(14.dp)
+                )
+            }
+
+            HorizontalDivider(color = colors.cardBorder)
 
             // Quantity Stepper + Add to Cart CTA
             Row(

@@ -92,6 +92,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.model.AppStage
 import com.example.service.OrderNotificationService
 import com.example.ui.components.AdminSettingsDialog
+import com.example.ui.components.AppUpdateDialog
 import com.example.ui.components.CheckeredRibbon
 import com.example.ui.components.DockNavItem
 import com.example.ui.components.FloatingNavDock
@@ -174,7 +175,10 @@ fun AklehHelwaApp(
     val dailyOfferText by viewModel.dailyOfferText.collectAsStateWithLifecycle()
     val deliveryZones by viewModel.deliveryZones.collectAsStateWithLifecycle()
     val trackedOrders by viewModel.customerTrackedOrders.collectAsStateWithLifecycle()
+    val appVersionConfig by viewModel.appVersionConfig.collectAsStateWithLifecycle()
+    val isUpdateDismissed by viewModel.isUpdateDismissed.collectAsStateWithLifecycle()
     val celebrationMessage by viewModel.celebrationMessage.collectAsStateWithLifecycle()
+    val customerUiMessage by viewModel.uiMessage.collectAsStateWithLifecycle()
 
     var requestedAdminNotifPermission by remember { mutableStateOf(false) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -269,6 +273,9 @@ fun AklehHelwaApp(
                     isDarkMode = isDarkMode,
                     adminPin = adminPin,
                     cloudSyncState = cloudSyncState,
+                    uiMessage = customerUiMessage,
+                    onClearUiMessage = { viewModel.clearUiMessage() },
+                    onCheckForUpdates = { viewModel.checkForUpdatesManually() },
                     onToggleTheme = { viewModel.toggleDarkMode() },
                     onEnterAdmin = { viewModel.enterAdminPanel() },
                     onToggleFavorite = { viewModel.toggleFavorite(it) },
@@ -320,6 +327,18 @@ fun AklehHelwaApp(
         OrderCelebrationDialog(
             message = msg,
             onDismiss = { viewModel.dismissCelebration() }
+        )
+    }
+
+    val remoteUpdate = appVersionConfig
+    if ((appStage == AppStage.CUSTOMER_STOREFRONT || appStage == AppStage.ADMIN_PANEL) &&
+        remoteUpdate != null &&
+        remoteUpdate.isUpdateAvailable(BuildConfig.VERSION_CODE) &&
+        (!isUpdateDismissed || remoteUpdate.isMandatory)
+    ) {
+        AppUpdateDialog(
+            versionConfig = remoteUpdate,
+            onDismiss = { viewModel.dismissUpdateDialog() }
         )
     }
 }
@@ -590,7 +609,8 @@ private fun AdminPanelScaffold(
                             onNavigateToMenu = { viewModel.setTab(AppTab.MENU) },
                             onNavigateToAnalytics = { viewModel.setTab(AppTab.MONTHLY_STATS) },
                             onOpenAddOrderDialog = { viewModel.openAddOrderDialog() },
-                            onOrderClick = { viewModel.showOrderDetails(it) }
+                            onOrderClick = { viewModel.showOrderDetails(it) },
+                            onCheckForUpdates = { viewModel.checkForUpdatesManually() }
                         )
                     }
 
@@ -697,12 +717,14 @@ private fun AdminPanelScaffold(
     }
 
     if (showSettingsDialog) {
+        val currentVersionConfig by viewModel.appVersionConfig.collectAsStateWithLifecycle()
         AdminSettingsDialog(
             isDarkMode = isDarkMode,
             currentPin = adminPin,
             adminWhatsAppNumber = adminWhatsAppNumber,
             dailyOfferText = dailyOfferText,
             deliveryZones = deliveryZones,
+            appVersionConfig = currentVersionConfig,
             cloudConfig = cloudConfig,
             cloudSyncState = cloudSyncState,
             onToggleTheme = { viewModel.toggleDarkMode() },
@@ -710,6 +732,9 @@ private fun AdminPanelScaffold(
             onUpdateWhatsAppNumber = { viewModel.updateAdminWhatsAppNumber(it) },
             onUpdateDailyOffer = { viewModel.updateDailyOffer(it) },
             onSaveDeliveryZones = { viewModel.saveDeliveryZones(it) },
+            onPublishAppVersion = { code, name, url, notes, mandatory ->
+                viewModel.publishAppVersionConfig(code, name, url, notes, mandatory)
+            },
             onSyncMenuNow = { viewModel.syncPublishedMenuToCloudNow() },
             onReturnToCustomerStorefront = { viewModel.returnToCustomerStorefront() },
             onDismiss = { showSettingsDialog = false }

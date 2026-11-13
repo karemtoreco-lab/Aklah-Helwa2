@@ -10,14 +10,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -68,9 +66,9 @@ import androidx.compose.ui.unit.sp
 import com.example.model.MenuCategoryEntity
 import com.example.model.MenuItemEntity
 import com.example.model.ProductEntity
-import com.example.ui.components.CachedBase64DishImage
 import com.example.ui.components.CulinaryPillChip
 import com.example.ui.components.ProductThumbnail
+import com.example.ui.components.SmartDishImage
 import com.example.ui.components.bounceClick
 import com.example.ui.theme.AppTheme
 import com.example.util.DateUtils
@@ -174,7 +172,7 @@ fun MenuItemEditorDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Multi-photo gallery (up to 3 Base64 cloud photos)
+                // Multi-photo gallery (up to 3 compressed Base64 Data URIs synced to Firestore)
                 Surface(
                     color = colors.secondarySurface,
                     shape = RoundedCornerShape(16.dp),
@@ -197,7 +195,7 @@ fun MenuItemEditorDialog(
                                 color = colors.textPrimary
                             )
                             Text(
-                                text = "تزامن تلقائي مع السحابة ☁️",
+                                text = "تزامن سحابي فوري ☁️",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = colors.profitGreen
                             )
@@ -208,15 +206,15 @@ fun MenuItemEditorDialog(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                itemsIndexed(photos) { idx, b64 ->
+                                itemsIndexed(photos) { idx, imgSrc ->
                                     Box(
                                         modifier = Modifier
-                                            .size(84.dp)
+                                            .size(86.dp)
                                             .clip(RoundedCornerShape(14.dp))
-                                            .border(1.dp, colors.goldAccent.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                                            .border(1.dp, colors.goldAccent.copy(alpha = 0.55f), RoundedCornerShape(14.dp))
                                     ) {
-                                        CachedBase64DishImage(
-                                            base64OrPath = b64,
+                                        SmartDishImage(
+                                            imageSource = imgSrc,
                                             contentDescription = "${item.displayName} - صورة ${idx + 1}",
                                             modifier = Modifier.fillMaxSize()
                                         )
@@ -227,7 +225,7 @@ fun MenuItemEditorDialog(
                                                 .padding(4.dp)
                                                 .size(26.dp)
                                                 .clip(CircleShape)
-                                                .background(Color.Black.copy(alpha = 0.68f))
+                                                .background(Color.Black.copy(alpha = 0.7f))
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Close,
@@ -249,7 +247,7 @@ fun MenuItemEditorDialog(
                             },
                             enabled = photos.size < 3,
                             shape = RoundedCornerShape(50),
-                            border = BorderStroke(1.dp, colors.primaryBrand.copy(alpha = 0.5f)),
+                            border = BorderStroke(1.dp, colors.primaryBrand.copy(alpha = 0.55f)),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .defaultMinSize(minHeight = 48.dp)
@@ -259,7 +257,7 @@ fun MenuItemEditorDialog(
                             Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = if (photos.size >= 3) "تم الوصول للحد الأقصى (3 صور)" else "إضافة صور من المعرض (حد أقصى 3)",
+                                text = if (photos.size >= 3) "تم الوصول للحد الأقصى (3 صور)" else "اختيار صور من المعرض (حد أقصى 3)",
                                 color = colors.primaryBrand,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
@@ -439,7 +437,6 @@ fun MenuItemEditorDialog(
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddCatalogProductToMenuDialog(
     menuCategories: List<MenuCategoryEntity>,
@@ -469,12 +466,12 @@ fun AddCatalogProductToMenuDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("اختر القسم في المنيو:", style = MaterialTheme.typography.labelMedium, color = colors.textSecondary)
-                FlowRow(
+                LazyRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    contentPadding = PaddingValues(vertical = 2.dp)
                 ) {
-                    menuCategories.forEach { cat ->
+                    items(menuCategories, key = { it.id }) { cat ->
                         CulinaryPillChip(
                             label = cat.name,
                             selected = selectedMenuCatId == cat.id,
@@ -560,7 +557,6 @@ fun AddCatalogProductToMenuDialog(
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddManualMenuItemDialog(
     menuCategories: List<MenuCategoryEntity>,
@@ -596,12 +592,12 @@ fun AddManualMenuItemDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FlowRow(
+                LazyRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    contentPadding = PaddingValues(vertical = 2.dp)
                 ) {
-                    menuCategories.forEach { cat ->
+                    items(menuCategories, key = { it.id }) { cat ->
                         CulinaryPillChip(
                             label = cat.name,
                             selected = selectedMenuCatId == cat.id,

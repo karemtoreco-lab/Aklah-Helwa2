@@ -37,6 +37,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -72,26 +73,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.CachePolicy
-import coil.request.ImageRequest
 import com.example.model.CategoryEntity
 import com.example.model.ProductEntity
 import com.example.model.ProductImageEntity
 import com.example.ui.components.CulinaryPillChip
 import com.example.ui.components.ProductThumbnail
+import com.example.ui.components.SmartDishImage
 import com.example.ui.components.StaggeredAppearItem
 import com.example.ui.components.bounceClick
 import com.example.ui.theme.AppTheme
 import com.example.util.DateUtils
-import java.io.File
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -120,7 +116,6 @@ fun ProductCatalogScreen(
     modifier: Modifier = Modifier
 ) {
     val colors = AppTheme.colors
-    val context = LocalContext.current
     var subTab by remember { mutableIntStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategoryId by remember { mutableStateOf<Long?>(null) }
@@ -207,265 +202,271 @@ fun ProductCatalogScreen(
     }
 
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.backgroundGradient),
         contentAlignment = Alignment.TopCenter
     ) {
-        Column(
+        // Unified single LazyColumn so header controls, search, compact horizontal category chips, and cards scroll seamlessly on all devices
+        LazyColumn(
             modifier = Modifier
                 .widthIn(max = 840.dp)
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
-                .testTag("product_catalog_screen")
+                .testTag("product_catalog_screen"),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(top = 10.dp, bottom = 124.dp)
         ) {
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Pill Segmented Bar
-            Surface(
-                color = colors.cardSurface,
-                shape = RoundedCornerShape(50),
-                border = BorderStroke(1.dp, colors.cardBorder),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(modifier = Modifier.padding(4.dp)) {
-                    SegmentedTabButton(
-                        title = "إدارة الأصناف (${products.size})",
-                        icon = Icons.Default.Inventory2,
-                        selected = subTab == 0,
-                        onClick = { subTab = 0 },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("subtab_products")
-                    )
-                    SegmentedTabButton(
-                        title = "معرض الصور",
-                        icon = Icons.Default.Collections,
-                        selected = subTab == 1,
-                        onClick = { subTab = 1 },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("subtab_gallery")
-                    )
+            item(key = "catalog_segmented_tabs") {
+                Surface(
+                    color = colors.cardSurface,
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(1.dp, colors.cardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(modifier = Modifier.padding(4.dp)) {
+                        SegmentedTabButton(
+                            title = "إدارة الأصناف (${products.size})",
+                            icon = Icons.Default.Inventory2,
+                            selected = subTab == 0,
+                            onClick = { subTab = 0 },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("subtab_products")
+                        )
+                        SegmentedTabButton(
+                            title = "معرض الصور",
+                            icon = Icons.Default.Collections,
+                            selected = subTab == 1,
+                            onClick = { subTab = 1 },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("subtab_gallery")
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("ابحث عن صنف...", color = colors.textSecondary) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = colors.primaryBrand) },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("catalog_search_input"),
-                shape = RoundedCornerShape(20.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = colors.cardSurface,
-                    unfocusedContainerColor = colors.cardSurface,
-                    focusedBorderColor = colors.primaryBrand,
-                    unfocusedBorderColor = colors.cardBorder,
-                    focusedTextColor = colors.textPrimary,
-                    unfocusedTextColor = colors.textPrimary
-                )
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Responsive FlowRow Category Chips
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                CulinaryPillChip(
-                    label = "الكل",
-                    selected = selectedCategoryId == null,
-                    onClick = { selectedCategoryId = null }
-                )
-                categories.forEach { cat ->
-                    CulinaryPillChip(
-                        label = cat.name,
-                        selected = selectedCategoryId == cat.id,
-                        onClick = { selectedCategoryId = if (selectedCategoryId == cat.id) null else cat.id }
+            item(key = "catalog_search_bar") {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("ابحث عن صنف...", color = colors.textSecondary) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = colors.primaryBrand) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "مسح", tint = colors.textSecondary)
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("catalog_search_input"),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = colors.cardSurface,
+                        unfocusedContainerColor = colors.cardSurface,
+                        focusedBorderColor = colors.primaryBrand,
+                        unfocusedBorderColor = colors.cardBorder,
+                        focusedTextColor = colors.textPrimary,
+                        unfocusedTextColor = colors.textPrimary
                     )
-                }
+                )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            item(key = "catalog_category_chips_row") {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 2.dp)
+                ) {
+                    item(key = "cat_all") {
+                        CulinaryPillChip(
+                            label = "الكل",
+                            selected = selectedCategoryId == null,
+                            onClick = { selectedCategoryId = null }
+                        )
+                    }
+                    items(categories, key = { it.id }) { cat ->
+                        CulinaryPillChip(
+                            label = cat.name,
+                            selected = selectedCategoryId == cat.id,
+                            onClick = {
+                                selectedCategoryId = if (selectedCategoryId == cat.id) null else cat.id
+                            }
+                        )
+                    }
+                }
+            }
 
             if (subTab == 0) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            editingProduct = null
-                            showProductDialog = true
-                        },
-                        modifier = Modifier
-                            .weight(1.3f)
-                            .defaultMinSize(minHeight = 48.dp)
-                            .bounceClick()
-                            .testTag("add_product_btn"),
-                        shape = RoundedCornerShape(50),
-                        colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand)
+                item(key = "catalog_actions") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("صنف جديد", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+                        Button(
+                            onClick = {
+                                editingProduct = null
+                                showProductDialog = true
+                            },
+                            modifier = Modifier
+                                .weight(1.3f)
+                                .defaultMinSize(minHeight = 48.dp)
+                                .bounceClick()
+                                .testTag("add_product_btn"),
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("صنف جديد", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
 
-                    OutlinedButton(
-                        onClick = { showCategoriesDialog = true },
-                        modifier = Modifier
-                            .weight(1f)
-                            .defaultMinSize(minHeight = 48.dp)
-                            .bounceClick()
-                            .testTag("manage_categories_btn"),
-                        shape = RoundedCornerShape(50),
-                        border = BorderStroke(1.dp, colors.cardBorder)
-                    ) {
-                        Icon(Icons.Default.Category, contentDescription = null, tint = colors.secondaryAccent, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("الأقسام", color = colors.textPrimary, fontWeight = FontWeight.Bold)
+                        OutlinedButton(
+                            onClick = { showCategoriesDialog = true },
+                            modifier = Modifier
+                                .weight(1f)
+                                .defaultMinSize(minHeight = 48.dp)
+                                .bounceClick()
+                                .testTag("manage_categories_btn"),
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.dp, colors.cardBorder)
+                        ) {
+                            Icon(Icons.Default.Category, contentDescription = null, tint = colors.secondaryAccent, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("الأقسام", color = colors.textPrimary, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                itemsIndexed(filteredProducts, key = { _, p -> p.id }) { index, prod ->
+                    val catName = categoryMap[prod.categoryId]?.name.orEmpty()
+                    val imgPath = primaryImages[prod.id]
 
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 124.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    itemsIndexed(filteredProducts, key = { _, p -> p.id }) { index, prod ->
-                        val catName = categoryMap[prod.categoryId]?.name.orEmpty()
-                        val imgPath = primaryImages[prod.id]
-
-                        StaggeredAppearItem(index = index) {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight()
-                                    .shadow(3.dp, RoundedCornerShape(20.dp))
-                                    .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
-                                    .bounceClick {
-                                        editingProduct = prod
-                                        showProductDialog = true
-                                    }
-                                    .testTag("product_card_${prod.id}"),
-                                shape = RoundedCornerShape(20.dp),
-                                colors = CardDefaults.cardColors(containerColor = colors.cardSurface)
-                            ) {
-                                Column(modifier = Modifier.padding(14.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        ProductThumbnail(
-                                            imagePath = imgPath,
-                                            contentDescription = prod.name,
-                                            size = 62.dp,
-                                            cornerRadius = 16.dp,
-                                            modifier = Modifier.clickable {
-                                                pickerTargetProductId = prod.id
-                                                photoPickerLauncher.launch(
-                                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                                )
-                                            }
+                    StaggeredAppearItem(index = index) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight()
+                                .shadow(3.dp, RoundedCornerShape(20.dp))
+                                .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
+                                .bounceClick {
+                                    editingProduct = prod
+                                    showProductDialog = true
+                                }
+                                .testTag("product_card_${prod.id}"),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = colors.cardSurface)
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    ProductThumbnail(
+                                        imagePath = imgPath,
+                                        contentDescription = prod.name,
+                                        size = 62.dp,
+                                        cornerRadius = 16.dp,
+                                        modifier = Modifier.clickable {
+                                            pickerTargetProductId = prod.id
+                                            photoPickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = prod.name,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = colors.textPrimary,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
                                         )
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = prod.name,
-                                                style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = colors.textPrimary,
-                                                maxLines = 2,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                            Text(
-                                                text = "$catName • ${prod.unit}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = colors.textSecondary
-                                            )
-                                            Spacer(modifier = Modifier.height(6.dp))
-                                            FlowRow(
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "$catName • ${prod.unit}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = colors.textSecondary
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        FlowRow(
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Surface(
+                                                color = colors.primaryBrand,
+                                                shape = RoundedCornerShape(50)
                                             ) {
-                                                Surface(
-                                                    color = colors.primaryBrand,
-                                                    shape = RoundedCornerShape(50)
-                                                ) {
-                                                    Text(
-                                                        text = if (prod.defaultSellingPrice > 0.0) {
-                                                            DateUtils.formatCurrency(prod.defaultSellingPrice)
-                                                        } else "حسب السعر",
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = Color.White,
-                                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
-                                                    )
-                                                }
-                                                Surface(
-                                                    color = colors.secondarySurface,
-                                                    shape = RoundedCornerShape(50),
-                                                    border = BorderStroke(1.dp, colors.cardBorder)
-                                                ) {
-                                                    Text(
-                                                        text = "شراء: ${DateUtils.formatCurrency(prod.purchaseCost)}",
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = colors.textSecondary,
-                                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                        Switch(
-                                            checked = prod.isActive,
-                                            onCheckedChange = { onToggleProductActive(prod) }
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    FlowRow(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.End,
-                                        verticalArrangement = Arrangement.Center
-                                    ) {
-                                        TextButton(
-                                            onClick = {
-                                                pickerTargetProductId = prod.id
-                                                photoPickerLauncher.launch(
-                                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                                Text(
+                                                    text = if (prod.defaultSellingPrice > 0.0) {
+                                                        DateUtils.formatCurrency(prod.defaultSellingPrice)
+                                                    } else "حسب السعر",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
                                                 )
                                             }
-                                        ) {
-                                            Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("إضافة صورة", fontSize = 12.sp, color = colors.goldAccent, fontWeight = FontWeight.Bold)
-                                        }
-                                        TextButton(
-                                            onClick = {
-                                                editingProduct = prod
-                                                showProductDialog = true
+                                            Surface(
+                                                color = colors.secondarySurface,
+                                                shape = RoundedCornerShape(50),
+                                                border = BorderStroke(1.dp, colors.cardBorder)
+                                            ) {
+                                                Text(
+                                                    text = "شراء: ${DateUtils.formatCurrency(prod.purchaseCost)}",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = colors.textSecondary,
+                                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                                                )
                                             }
-                                        ) {
-                                            Icon(Icons.Default.Edit, contentDescription = null, tint = colors.textPrimary, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("تعديل", fontSize = 12.sp, color = colors.textPrimary)
                                         }
-                                        IconButton(
-                                            onClick = { deletingProduct = prod },
-                                            modifier = Modifier.size(38.dp)
-                                        ) {
-                                            Icon(Icons.Default.Delete, contentDescription = "حذف الصنف", tint = colors.primaryBrand, modifier = Modifier.size(18.dp))
+                                    }
+                                    Switch(
+                                        checked = prod.isActive,
+                                        onCheckedChange = { onToggleProductActive(prod) }
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    TextButton(
+                                        onClick = {
+                                            pickerTargetProductId = prod.id
+                                            photoPickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
                                         }
+                                    ) {
+                                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("إضافة صورة", fontSize = 12.sp, color = colors.goldAccent, fontWeight = FontWeight.Bold)
+                                    }
+                                    TextButton(
+                                        onClick = {
+                                            editingProduct = prod
+                                            showProductDialog = true
+                                        }
+                                    ) {
+                                        Icon(Icons.Default.Edit, contentDescription = null, tint = colors.textPrimary, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("تعديل", fontSize = 12.sp, color = colors.textPrimary)
+                                    }
+                                    IconButton(
+                                        onClick = { deletingProduct = prod },
+                                        modifier = Modifier.size(38.dp)
+                                    ) {
+                                        Icon(Icons.Default.Delete, contentDescription = "حذف الصنف", tint = colors.primaryBrand, modifier = Modifier.size(18.dp))
                                     }
                                 }
                             }
@@ -473,144 +474,128 @@ fun ProductCatalogScreen(
                     }
                 }
             } else {
-                // Sub-tab 1: معرض الصور with Coil downsampling
-                val totalImagesCount = imagesByProduct.values.sumOf { it.size }
-                Surface(
-                    color = colors.cardSurface,
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, colors.cardBorder),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = if (totalImagesCount == 0) {
-                            "معرض الصور فارغ حالياً — ارفع صور الأصناف من جهازك"
-                        } else {
-                            "إجمالي الصور المحفوظة: $totalImagesCount صورة"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.textSecondary,
-                        modifier = Modifier.padding(12.dp)
-                    )
+                item(key = "gallery_summary") {
+                    val totalImagesCount = imagesByProduct.values.sumOf { it.size }
+                    Surface(
+                        color = colors.cardSurface,
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, colors.cardBorder),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = if (totalImagesCount == 0) {
+                                "معرض الصور فارغ حالياً — ارفع صور الأصناف من جهازك"
+                            } else {
+                                "إجمالي الصور المحفوظة: $totalImagesCount صورة"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.textSecondary,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                itemsIndexed(filteredProducts, key = { _, p -> "gal_${p.id}" }) { index, prod ->
+                    val imgs = imagesByProduct[prod.id].orEmpty()
+                    val catName = categoryMap[prod.categoryId]?.name.orEmpty()
 
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 124.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    itemsIndexed(filteredProducts, key = { _, p -> p.id }) { index, prod ->
-                        val imgs = imagesByProduct[prod.id].orEmpty()
-                        val catName = categoryMap[prod.categoryId]?.name.orEmpty()
-
-                        StaggeredAppearItem(index = index) {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
-                                    .testTag("gallery_product_${prod.id}"),
-                                shape = RoundedCornerShape(20.dp),
-                                colors = CardDefaults.cardColors(containerColor = colors.cardSurface)
-                            ) {
-                                Column(modifier = Modifier.padding(14.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(prod.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = colors.textPrimary)
-                                            Text("$catName • ${imgs.size} صورة", style = MaterialTheme.typography.labelSmall, color = colors.textSecondary)
-                                        }
-                                        Button(
-                                            onClick = {
-                                                pickerTargetProductId = prod.id
-                                                photoPickerLauncher.launch(
-                                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                                )
-                                            },
-                                            shape = RoundedCornerShape(50),
-                                            colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand),
-                                            modifier = Modifier
-                                                .defaultMinSize(minHeight = 48.dp)
-                                                .bounceClick()
-                                        ) {
-                                            Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("رفع صور", color = Color.White, fontSize = 12.sp)
-                                        }
+                    StaggeredAppearItem(index = index) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
+                                .testTag("gallery_product_${prod.id}"),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = colors.cardSurface)
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(prod.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+                                        Text("$catName • ${imgs.size} صورة", style = MaterialTheme.typography.labelSmall, color = colors.textSecondary)
                                     }
+                                    Button(
+                                        onClick = {
+                                            pickerTargetProductId = prod.id
+                                            photoPickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
+                                        },
+                                        shape = RoundedCornerShape(50),
+                                        colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand),
+                                        modifier = Modifier
+                                            .defaultMinSize(minHeight = 48.dp)
+                                            .bounceClick()
+                                    ) {
+                                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("رفع صور", color = Color.White, fontSize = 12.sp)
+                                    }
+                                }
 
-                                    if (imgs.isNotEmpty()) {
-                                        Spacer(modifier = Modifier.height(10.dp))
-                                        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                            items(imgs, key = { it.id }) { img ->
-                                                val imgRequest = remember(img.imagePath) {
-                                                    ImageRequest.Builder(context)
-                                                        .data(File(img.imagePath))
-                                                        .size(240)
-                                                        .memoryCachePolicy(CachePolicy.ENABLED)
-                                                        .diskCachePolicy(CachePolicy.ENABLED)
-                                                        .crossfade(true)
-                                                        .build()
-                                                }
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(112.dp)
-                                                        .clip(RoundedCornerShape(16.dp))
-                                                        .border(
-                                                            width = if (img.isPrimary) 2.dp else 1.dp,
-                                                            color = if (img.isPrimary) colors.profitGreen else colors.cardBorder,
-                                                            shape = RoundedCornerShape(16.dp)
-                                                        )
-                                                ) {
-                                                    AsyncImage(
-                                                        model = imgRequest,
-                                                        contentDescription = prod.name,
-                                                        contentScale = ContentScale.Crop,
-                                                        modifier = Modifier
-                                                            .fillMaxSize()
-                                                            .clickable { onSetPrimaryImage(prod.id, img.id) }
+                                if (imgs.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        items(imgs, key = { it.id }) { img ->
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(112.dp)
+                                                    .clip(RoundedCornerShape(16.dp))
+                                                    .border(
+                                                        width = if (img.isPrimary) 2.dp else 1.dp,
+                                                        color = if (img.isPrimary) colors.profitGreen else colors.cardBorder,
+                                                        shape = RoundedCornerShape(16.dp)
                                                     )
+                                            ) {
+                                                SmartDishImage(
+                                                    imageSource = img.imagePath,
+                                                    contentDescription = prod.name,
+                                                    categoryName = catName,
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .clickable { onSetPrimaryImage(prod.id, img.id) }
+                                                )
 
-                                                    IconButton(
-                                                        onClick = { onDeleteImage(img) },
-                                                        modifier = Modifier
-                                                            .align(Alignment.TopEnd)
-                                                            .padding(4.dp)
-                                                            .size(28.dp)
-                                                            .background(colors.cardSurface.copy(alpha = 0.9f), CircleShape)
-                                                    ) {
-                                                        Icon(Icons.Default.Delete, contentDescription = "حذف الصورة", tint = colors.primaryBrand, modifier = Modifier.size(15.dp))
-                                                    }
+                                                IconButton(
+                                                    onClick = { onDeleteImage(img) },
+                                                    modifier = Modifier
+                                                        .align(Alignment.TopEnd)
+                                                        .padding(4.dp)
+                                                        .size(28.dp)
+                                                        .background(colors.cardSurface.copy(alpha = 0.9f), CircleShape)
+                                                ) {
+                                                    Icon(Icons.Default.Delete, contentDescription = "حذف الصورة", tint = colors.primaryBrand, modifier = Modifier.size(15.dp))
+                                                }
 
-                                                    Surface(
-                                                        color = if (img.isPrimary) colors.profitContainer else colors.cardSurface.copy(alpha = 0.92f),
-                                                        shape = RoundedCornerShape(50),
-                                                        modifier = Modifier
-                                                            .align(Alignment.BottomCenter)
-                                                            .padding(4.dp)
-                                                            .clickable { onSetPrimaryImage(prod.id, img.id) }
+                                                Surface(
+                                                    color = if (img.isPrimary) colors.profitContainer else colors.cardSurface.copy(alpha = 0.92f),
+                                                    shape = RoundedCornerShape(50),
+                                                    modifier = Modifier
+                                                        .align(Alignment.BottomCenter)
+                                                        .padding(4.dp)
+                                                        .clickable { onSetPrimaryImage(prod.id, img.id) }
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
                                                     ) {
-                                                        Row(
-                                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                                            verticalAlignment = Alignment.CenterVertically
-                                                        ) {
-                                                            Icon(
-                                                                Icons.Default.Star,
-                                                                contentDescription = null,
-                                                                tint = if (img.isPrimary) colors.profitGreen else colors.goldAccent,
-                                                                modifier = Modifier.size(12.dp)
-                                                            )
-                                                            Spacer(modifier = Modifier.width(3.dp))
-                                                            Text(
-                                                                text = if (img.isPrimary) "رئيسية" else "تعيين رئيسية",
-                                                                fontSize = 10.sp,
-                                                                fontWeight = FontWeight.Bold,
-                                                                color = if (img.isPrimary) colors.onProfitContainer else colors.textPrimary
-                                                            )
-                                                        }
+                                                        Icon(
+                                                            Icons.Default.Star,
+                                                            contentDescription = null,
+                                                            tint = if (img.isPrimary) colors.profitGreen else colors.goldAccent,
+                                                            modifier = Modifier.size(12.dp)
+                                                        )
+                                                        Spacer(modifier = Modifier.width(3.dp))
+                                                        Text(
+                                                            text = if (img.isPrimary) "رئيسية" else "تعيين رئيسية",
+                                                            fontSize = 10.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = if (img.isPrimary) colors.onProfitContainer else colors.textPrimary
+                                                        )
                                                     }
                                                 }
                                             }

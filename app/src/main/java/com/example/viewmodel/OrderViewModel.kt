@@ -12,6 +12,7 @@ import com.example.data.CloudSyncManager
 import com.example.data.OrderRepository
 import com.example.model.AppStage
 import com.example.model.AppUser
+import com.example.model.AppVersionConfig
 import com.example.model.CategoryEntity
 import com.example.model.CloudConfig
 import com.example.model.CloudSyncState
@@ -34,9 +35,11 @@ import com.example.model.ProductEntity
 import com.example.model.ProductImageEntity
 import com.example.model.TopProductStat
 import com.example.model.TrackedCloudOrder
+import com.example.BuildConfig
 import com.example.util.Base64ImageUtils
 import com.example.util.DateUtils
 import com.example.util.ImageStorageUtils
+import com.example.util.ImageUtils
 import com.example.util.MenuPosterRenderer
 import com.example.util.MenuPosterSection
 import com.example.util.WhatsAppLaunchResult
@@ -167,6 +170,10 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     val cloudSyncState: StateFlow<CloudSyncState> = cloudSyncManager.syncState
     val cloudAppUsers: StateFlow<List<AppUser>> = cloudSyncManager.cloudAppUsers
     val customerTrackedOrders: StateFlow<List<TrackedCloudOrder>> = cloudSyncManager.cloudCustomerOrders
+    val appVersionConfig: StateFlow<AppVersionConfig?> = cloudSyncManager.cloudVersionConfig
+
+    private val _isUpdateDismissed = MutableStateFlow(false)
+    val isUpdateDismissed: StateFlow<Boolean> = _isUpdateDismissed.asStateFlow()
 
     // Orders & Search
     private val _selectedYearMonth = MutableStateFlow(DateUtils.getCurrentYearMonth())
@@ -557,6 +564,67 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             cloudSyncManager.publishDeliveryZonesToCloud(cleanZones)
             withContext(Dispatchers.Main) {
                 _uiMessage.value = "تم حفظ مناطق التوصيل وأسعار الشحن بنجاح"
+            }
+        }
+    }
+
+    fun dismissUpdateDialog() {
+        _isUpdateDismissed.value = true
+    }
+
+    fun checkForUpdatesManually() {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (!cloudSyncState.value.isCloudConnected) {
+                cloudSyncManager.configureAndStart(cloudConfig.value, enableAdminListeners = true)
+            }
+            val result = cloudSyncManager.fetchVersionConfigOnce()
+            withContext(Dispatchers.Main) {
+                result.fold(
+                    onSuccess = { remote ->
+                        if (remote != null && remote.isUpdateAvailable(BuildConfig.VERSION_CODE)) {
+                            _isUpdateDismissed.value = false
+                            _uiMessage.value = "يتوفر تحديث جديد (${remote.latestVersionName}) ✨"
+                        } else {
+                            _uiMessage.value = "أنت على أحدث إصدار حالياً (${BuildConfig.VERSION_NAME}) ✅"
+                        }
+                    },
+                    onFailure = {
+                        _uiMessage.value = "تعذر التحقق من التحديثات حالياً، تأكد من اتصال الإنترنت"
+                    }
+                )
+            }
+        }
+    }
+
+    fun publishAppVersionConfig(
+        latestVersionCode: Int,
+        latestVersionName: String,
+        downloadUrl: String,
+        releaseNotes: String,
+        isMandatory: Boolean
+    ) {
+        val cleanName = latestVersionName.trim()
+        val cleanUrl = downloadUrl.trim()
+        if (latestVersionCode < 1 || cleanName.isBlank() || cleanUrl.isBlank()) {
+            _uiMessage.value = "يرجى إدخال كود الإصدار ورقمه ورابط التحميل المباشر"
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val res = cloudSyncManager.publishAppVersionConfig(
+                AppVersionConfig(
+                    latestVersionCode = latestVersionCode,
+                    latestVersionName = cleanName,
+                    downloadUrl = cleanUrl,
+                    releaseNotes = releaseNotes.trim(),
+                    isMandatory = isMandatory
+                )
+            )
+            withContext(Dispatchers.Main) {
+                _uiMessage.value = if (res.isSuccess) {
+                    "تم نشر بيانات التحديث الجديد للعملاء بنجاح ✨"
+                } else {
+                    res.exceptionOrNull()?.localizedMessage ?: "تعذر حفظ بيانات التحديث في السحابة"
+                }
             }
         }
     }
@@ -1139,17 +1207,35 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Product Images Gallery (Local Catalog)
+    // Product Images Gallery (Local Catalog + automatic Base64 sync to linked Menu Item if < 3)
     fun addProductImagesFromUris(productId: Long, uris: List<Uri>) {
         if (uris.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
             val ctx = getApplication<Application>()
+            val newBase64Photos = mutableListOf<String>()
             uris.forEach { uri ->
                 val savedPath = ImageStorageUtils.copyProductImageToInternalStorage(ctx, uri, productId)
                 if (savedPath != null) {
                     businessRepository.insertProductImage(
                         ProductImageEntity(productId = productId, imagePath = savedPath)
                     )
+                }
+                val encodedDataUri = ImageUtils.compressUriToBase64DataUri(ctx, uri)
+                if (!encodedDataUri.isNullOrBlank()) {
+                    newBase64Photos.add(encodedDataUri)
+                }
+            }
+            if (newBase64Photos.isNotEmpty()) {
+                businessRepository.getMenuItemByProductIdOnce(productId)?.let { linkedMenu ->
+                    val existing = linkedMenu.photoList().toMutableList()
+                    val slots = (3 - existing.size).coerceAtLeast(0)
+                    if (slots > 0) {
+                        existing.addAll(newBase64Photos.take(slots))
+                        businessRepository.updateMenuItem(
+                            linkedMenu.copy(photosJson = Base64ImageUtils.encodePhotosJson(existing))
+                        )
+                        autoSyncMenuIfConfigured()
+                    }
                 }
             }
         }
@@ -1168,7 +1254,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Unified Menu Multi-Photo Base64 Upload (up to 3 compressed 400x400 JPEG 60% photos synced to Firestore)
+    // Unified Menu Multi-Photo Base64 Upload (up to 3 compressed <=640px JPEG 72% Data URIs synced to Firestore)
     fun addMenuItemPhotosFromUris(menuItem: MenuItemEntity, uris: List<Uri>) {
         if (uris.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
@@ -1182,18 +1268,26 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 return@launch
             }
+            var addedCount = 0
             uris.take(remainingSlots).forEach { uri ->
-                val encoded = Base64ImageUtils.compressUriToBase64(ctx, uri)
+                val encoded = ImageUtils.compressUriToBase64DataUri(ctx, uri)
                 if (!encoded.isNullOrBlank()) {
                     currentPhotos.add(encoded)
+                    addedCount++
                 }
             }
-            businessRepository.updateMenuItem(
-                latest.copy(photosJson = Base64ImageUtils.encodePhotosJson(currentPhotos))
-            )
-            autoSyncMenuIfConfigured()
+            if (addedCount > 0) {
+                businessRepository.updateMenuItem(
+                    latest.copy(photosJson = Base64ImageUtils.encodePhotosJson(currentPhotos))
+                )
+                autoSyncMenuIfConfigured()
+            }
             withContext(Dispatchers.Main) {
-                _uiMessage.value = "تم رفع الصور ومزامنتها على السحابة بنجاح 📸"
+                _uiMessage.value = if (addedCount > 0) {
+                    "تم ضغط ورفع $addedCount صورة ومزامنتها مع السحابة بنجاح 📸"
+                } else {
+                    "تعذر قراءة الصورة المختارة، يرجى المحاولة بصورة أخرى"
+                }
             }
         }
     }
