@@ -20,7 +20,7 @@ jobs:
         cache: gradle
 
     - name: Build and Sign Release APK
-      run: gradle assembleRelease --no-configuration-cache -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/aklah-helwa-key.jks -Pandroid.injected.signing.store.password=${{ secrets.STORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+      run: gradle assembleRelease --no-daemon --no-configuration-cache -Djava.awt.headless=true -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/aklah-helwa-key.jks -Pandroid.injected.signing.store.password=${{ secrets.STORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
 
     - name: Upload Signed APK
       uses: actions/upload-artifact@v4
