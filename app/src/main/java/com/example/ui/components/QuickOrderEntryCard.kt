@@ -1,10 +1,6 @@
 package com.example.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,14 +18,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.AddShoppingCart
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -40,7 +32,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,393 +39,255 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.BrandRedPrimary
-import com.example.ui.theme.CharcoalBlackBg
-import com.example.ui.theme.CharcoalCardBorder
-import com.example.ui.theme.CharcoalCardElevated
-import com.example.ui.theme.CharcoalCardSurface
-import com.example.ui.theme.CleanWhite
-import com.example.ui.theme.EmeraldProfit
-import com.example.ui.theme.EmeraldProfitContainer
-import com.example.ui.theme.EmeraldProfitOnContainer
-import com.example.ui.theme.TextWhitePrimary
-import com.example.ui.theme.TextWhiteSecondary
+import com.example.ui.theme.AppTheme
+import com.example.util.DateUtils
 
+/**
+ * Quick inline order entry card styled with the adaptive [AppTheme.colors] palette
+ * (Gourmet Espresso Dark & Warm Ivory Light) for rapid Admin order recording.
+ */
 @Composable
 fun QuickOrderEntryCard(
-    onSaveOrder: (
+    onSaveQuickOrder: (
         customerName: String,
-        orderValue: Double,
-        profitEarned: Double,
         itemsDescription: String,
-        customerPhone: String
+        salePrice: Double,
+        costPrice: Double
     ) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = AppTheme.colors
     var customerName by remember { mutableStateOf("") }
-    var orderValueText by remember { mutableStateOf("") }
-    var profitEarnedText by remember { mutableStateOf("") }
     var itemsDescription by remember { mutableStateOf("") }
-    var customerPhone by remember { mutableStateOf("") }
+    var salePriceText by remember { mutableStateOf("") }
+    var costPriceText by remember { mutableStateOf("") }
 
-    var isExpanded by remember { mutableStateOf(false) }
-    var showSuccessMessage by remember { mutableStateOf(false) }
-
-    var nameError by remember { mutableStateOf(false) }
-    var valueError by remember { mutableStateOf(false) }
-    var profitError by remember { mutableStateOf(false) }
+    val salePrice = salePriceText.toDoubleOrNull() ?: 0.0
+    val costPrice = costPriceText.toDoubleOrNull() ?: 0.0
+    val grossProfit = salePrice - costPrice
+    val canSubmit = customerName.isNotBlank() && itemsDescription.isNotBlank() && salePrice > 0.0
 
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, CharcoalCardBorder, RoundedCornerShape(20.dp))
+            .shadow(
+                elevation = if (colors.isDark) 0.dp else 8.dp,
+                shape = RoundedCornerShape(24.dp),
+                spotColor = colors.primaryBrand.copy(alpha = 0.2f)
+            )
+            .border(
+                width = 1.dp,
+                color = if (colors.isDark) colors.glassBorder else colors.cardBorder,
+                shape = RoundedCornerShape(24.dp)
+            )
             .testTag("quick_order_entry_card"),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = CharcoalCardSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+            containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface
+        )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(Color(0xFFFF3D00), BrandRedPrimary)
-                                ),
-                                CircleShape
-                            ),
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(colors.warmAccentGradient),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Save,
+                            imageVector = Icons.Default.Bolt,
                             contentDescription = null,
-                            tint = CleanWhite,
-                            modifier = Modifier.size(20.dp)
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "تسجيل طلبية سريعة ⚡",
+                            text = "تسجيل أوردر سريع",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = CleanWhite
+                            fontWeight = FontWeight.ExtraBold,
+                            color = colors.textPrimary
                         )
                         Text(
-                            text = "أدخل بيانات العميل والمكسب للحفظ الفوري",
+                            text = "حساب فوري لصافي الربح",
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextWhiteSecondary
+                            color = colors.textSecondary
                         )
                     }
                 }
 
-                TextButton(
-                    onClick = { isExpanded = !isExpanded },
-                    modifier = Modifier.testTag("toggle_expand_extra_fields")
+                Surface(
+                    color = colors.profitContainer,
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(1.dp, colors.profitGreen.copy(alpha = 0.45f))
                 ) {
-                    Text(
-                        text = if (isExpanded) "أقل" else "تفاصيل أكثر",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = BrandRedPrimary
-                    )
-                    Icon(
-                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = BrandRedPrimary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // 1. Customer Name TextField
-            OutlinedTextField(
-                value = customerName,
-                onValueChange = {
-                    customerName = it
-                    if (it.isNotBlank()) nameError = false
-                },
-                label = { Text("اسم العميل *", color = TextWhiteSecondary) },
-                placeholder = { Text("مثال: أم محمد / أحمد علي", color = Color(0xFF666666)) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = BrandRedPrimary
-                    )
-                },
-                isError = nameError,
-                supportingText = if (nameError) {
-                    { Text("يرجى كتابة اسم العميل") }
-                } else null,
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("entry_customer_name_input"),
-                shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = CharcoalCardElevated,
-                    focusedContainerColor = CharcoalCardElevated,
-                    focusedBorderColor = BrandRedPrimary,
-                    unfocusedBorderColor = CharcoalCardBorder,
-                    focusedTextColor = CleanWhite,
-                    unfocusedTextColor = CleanWhite
-                )
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // 2 & 3. Order Value & Profit Earned TextFields
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Order Value TextField
-                OutlinedTextField(
-                    value = orderValueText,
-                    onValueChange = {
-                        orderValueText = it
-                        if (it.toDoubleOrNull() != null && it.toDouble() > 0) valueError = false
-                    },
-                    label = { Text("قيمة الطلب (ج.م) *", color = TextWhiteSecondary) },
-                    placeholder = { Text("500", color = Color(0xFF666666)) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.AttachMoney,
-                            contentDescription = null,
-                            tint = BrandRedPrimary
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    isError = valueError,
-                    supportingText = if (valueError) {
-                        { Text("أدخل قيمة الطلب") }
-                    } else null,
-                    singleLine = true,
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("entry_order_value_input"),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = CharcoalCardElevated,
-                        focusedContainerColor = CharcoalCardElevated,
-                        focusedBorderColor = BrandRedPrimary,
-                        unfocusedBorderColor = CharcoalCardBorder,
-                        focusedTextColor = CleanWhite,
-                        unfocusedTextColor = CleanWhite
-                    )
-                )
-
-                // Profit Earned TextField
-                OutlinedTextField(
-                    value = profitEarnedText,
-                    onValueChange = {
-                        profitEarnedText = it
-                        if (it.toDoubleOrNull() != null) profitError = false
-                    },
-                    label = { Text("المكسب (ج.م) *", color = TextWhiteSecondary) },
-                    placeholder = { Text("180", color = Color(0xFF666666)) },
-                    leadingIcon = {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Icon(
                             imageVector = Icons.Default.TrendingUp,
                             contentDescription = null,
-                            tint = EmeraldProfit
+                            tint = colors.profitGreen,
+                            modifier = Modifier.size(14.dp)
                         )
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    isError = profitError,
-                    supportingText = if (profitError) {
-                        { Text("أدخل المكسب") }
-                    } else null,
-                    singleLine = true,
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("entry_profit_earned_input"),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = CharcoalCardElevated,
-                        focusedContainerColor = CharcoalCardElevated,
-                        focusedBorderColor = EmeraldProfit,
-                        unfocusedBorderColor = CharcoalCardBorder,
-                        focusedTextColor = CleanWhite,
-                        unfocusedTextColor = CleanWhite
-                    )
-                )
-            }
-
-            // Optional Expanded Details
-            AnimatedVisibility(
-                visible = isExpanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
-                Column {
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    OutlinedTextField(
-                        value = itemsDescription,
-                        onValueChange = { itemsDescription = it },
-                        label = { Text("أصناف الطلب / الوجبات (اختياري)", color = TextWhiteSecondary) },
-                        placeholder = { Text("مثال: طاجن مكرونة بشاميل + فراخ مشوية", color = Color(0xFF666666)) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Restaurant, contentDescription = null, tint = BrandRedPrimary)
-                        },
-                        singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("entry_items_description_input"),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = CharcoalCardElevated,
-                            focusedContainerColor = CharcoalCardElevated,
-                            focusedBorderColor = BrandRedPrimary,
-                            unfocusedBorderColor = CharcoalCardBorder,
-                            focusedTextColor = CleanWhite,
-                            unfocusedTextColor = CleanWhite
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = DateUtils.formatCurrency(grossProfit),
+                            color = colors.onProfitContainer,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 12.sp
                         )
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    OutlinedTextField(
-                        value = customerPhone,
-                        onValueChange = { customerPhone = it },
-                        label = { Text("رقم هاتف العميل (اختياري)", color = TextWhiteSecondary) },
-                        placeholder = { Text("010XXXXXXXX", color = Color(0xFF666666)) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Phone, contentDescription = null, tint = BrandRedPrimary)
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("entry_customer_phone_input"),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = CharcoalCardElevated,
-                            focusedContainerColor = CharcoalCardElevated,
-                            focusedBorderColor = BrandRedPrimary,
-                            unfocusedBorderColor = CharcoalCardBorder,
-                            focusedTextColor = CleanWhite,
-                            unfocusedTextColor = CleanWhite
-                        )
-                    )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Save to Database Button with Brand Red Gradient
-            Button(
-                onClick = {
-                    var hasError = false
-                    if (customerName.isBlank()) {
-                        nameError = true
-                        hasError = true
-                    }
-                    val value = orderValueText.toDoubleOrNull()
-                    if (value == null || value <= 0) {
-                        valueError = true
-                        hasError = true
-                    }
-                    val profit = profitEarnedText.toDoubleOrNull()
-                    if (profit == null) {
-                        profitError = true
-                        hasError = true
-                    }
-
-                    if (!hasError && value != null && profit != null) {
-                        onSaveOrder(
-                            customerName.trim(),
-                            value,
-                            profit,
-                            itemsDescription.trim(),
-                            customerPhone.trim()
-                        )
-                        customerName = ""
-                        orderValueText = ""
-                        profitEarnedText = ""
-                        itemsDescription = ""
-                        customerPhone = ""
-                        showSuccessMessage = true
-                    }
+            OutlinedTextField(
+                value = customerName,
+                onValueChange = { customerName = it },
+                label = { Text("اسم العميل *") },
+                leadingIcon = {
+                    Icon(Icons.Default.Person, contentDescription = null, tint = colors.primaryBrand)
                 },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
-                    .testTag("save_order_to_db_btn"),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = BrandRedPrimary
+                    .testTag("quick_order_customer_input"),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = colors.secondarySurface,
+                    unfocusedContainerColor = colors.secondarySurface,
+                    focusedBorderColor = colors.primaryBrand,
+                    unfocusedBorderColor = colors.cardBorder,
+                    focusedTextColor = colors.textPrimary,
+                    unfocusedTextColor = colors.textPrimary
                 )
+            )
+
+            OutlinedTextField(
+                value = itemsDescription,
+                onValueChange = { itemsDescription = it },
+                label = { Text("تفاصيل الأصناف *") },
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("quick_order_items_input"),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = colors.secondarySurface,
+                    unfocusedContainerColor = colors.secondarySurface,
+                    focusedBorderColor = colors.primaryBrand,
+                    unfocusedBorderColor = colors.cardBorder,
+                    focusedTextColor = colors.textPrimary,
+                    unfocusedTextColor = colors.textPrimary
+                )
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Save,
-                    contentDescription = null,
-                    tint = CleanWhite,
-                    modifier = Modifier.size(20.dp)
+                OutlinedTextField(
+                    value = salePriceText,
+                    onValueChange = { salePriceText = it },
+                    label = { Text("سعر البيع *") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("quick_order_sale_input"),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = colors.secondarySurface,
+                        unfocusedContainerColor = colors.secondarySurface,
+                        focusedBorderColor = colors.goldAccent,
+                        unfocusedBorderColor = colors.cardBorder,
+                        focusedTextColor = colors.textPrimary,
+                        unfocusedTextColor = colors.textPrimary
+                    )
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "حفظ الطلب في قاعدة البيانات",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = CleanWhite
+
+                OutlinedTextField(
+                    value = costPriceText,
+                    onValueChange = { costPriceText = it },
+                    label = { Text("التكلفة") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("quick_order_cost_input"),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = colors.secondarySurface,
+                        unfocusedContainerColor = colors.secondarySurface,
+                        focusedBorderColor = colors.profitGreen,
+                        unfocusedBorderColor = colors.cardBorder,
+                        focusedTextColor = colors.textPrimary,
+                        unfocusedTextColor = colors.textPrimary
+                    )
                 )
             }
 
-            // Success feedback
-            AnimatedVisibility(
-                visible = showSuccessMessage,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
-                Column {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Surface(
-                        color = EmeraldProfitContainer,
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = EmeraldProfit,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "تم حفظ الطلب في قاعدة البيانات وتحديث الأرباح بنجاح!",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = EmeraldProfitOnContainer
-                            )
-                        }
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Button(
+                onClick = {
+                    if (canSubmit) {
+                        onSaveQuickOrder(
+                            customerName.trim(),
+                            itemsDescription.trim(),
+                            salePrice.coerceAtLeast(0.0),
+                            costPrice.coerceAtLeast(0.0)
+                        )
+                        customerName = ""
+                        itemsDescription = ""
+                        salePriceText = ""
+                        costPriceText = ""
                     }
-                }
+                },
+                enabled = canSubmit,
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.primaryBrand,
+                    disabledContainerColor = colors.secondarySurface
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = 48.dp)
+                    .bounceClick()
+                    .testTag("quick_order_save_btn")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AddShoppingCart,
+                    contentDescription = null,
+                    tint = if (canSubmit) Color.White else colors.textSecondary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "حفظ الأوردر السريع",
+                    color = if (canSubmit) Color.White else colors.textSecondary,
+                    fontWeight = FontWeight.ExtraBold
+                )
             }
         }
     }
