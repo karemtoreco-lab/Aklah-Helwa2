@@ -382,18 +382,19 @@ fun CustomerStorefrontScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .shadow(
-                                elevation = 14.dp,
+                                elevation = 16.dp,
                                 shape = RoundedCornerShape(28.dp),
-                                spotColor = colors.primaryBrand.copy(alpha = 0.35f)
+                                spotColor = colors.primaryBrand.copy(alpha = 0.42f)
                             )
                             .clip(RoundedCornerShape(28.dp))
                             .background(colors.heroGradient)
                             .border(
-                                width = 1.dp,
+                                width = 1.2.dp,
                                 brush = Brush.linearGradient(
                                     listOf(
-                                        colors.goldAccent.copy(alpha = 0.65f),
-                                        Color.White.copy(alpha = 0.14f)
+                                        colors.goldAccent.copy(alpha = 0.78f),
+                                        Color.White.copy(alpha = 0.16f),
+                                        colors.goldAccent.copy(alpha = 0.45f)
                                     )
                                 ),
                                 shape = RoundedCornerShape(28.dp)
@@ -404,7 +405,7 @@ fun CustomerStorefrontScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -497,16 +498,47 @@ fun CustomerStorefrontScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.app_logo),
-                                    contentDescription = "شعار أكلة حلوة",
-                                    contentScale = ContentScale.Crop,
+                                // Upgraded Double-Ring Glowing Logo Frame
+                                Box(
+                                    contentAlignment = Alignment.Center,
                                     modifier = Modifier
-                                        .size(66.dp)
-                                        .shadow(8.dp, CircleShape)
+                                        .size(74.dp)
+                                        .shadow(
+                                            elevation = 12.dp,
+                                            shape = CircleShape,
+                                            spotColor = colors.goldAccent.copy(alpha = 0.65f)
+                                        )
                                         .clip(CircleShape)
-                                        .border(2.dp, colors.goldAccent, CircleShape)
-                                )
+                                        .background(
+                                            Brush.linearGradient(
+                                                listOf(
+                                                    colors.goldAccent.copy(alpha = 0.45f),
+                                                    Color.White.copy(alpha = 0.18f)
+                                                )
+                                            )
+                                        )
+                                        .border(
+                                            width = 2.dp,
+                                            brush = Brush.linearGradient(
+                                                listOf(
+                                                    colors.goldAccent,
+                                                    Color.White.copy(alpha = 0.85f),
+                                                    colors.goldAccent
+                                                )
+                                            ),
+                                            shape = CircleShape
+                                        )
+                                        .padding(3.dp)
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.app_logo),
+                                        contentDescription = "شعار أكلة حلوة",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape)
+                                    )
+                                }
 
                                 Spacer(modifier = Modifier.width(12.dp))
 
@@ -585,7 +617,15 @@ fun CustomerStorefrontScreen(
                         Surface(
                             color = if (colors.isDark) colors.glassSurface else colors.secondaryContainer,
                             shape = RoundedCornerShape(20.dp),
-                            border = BorderStroke(1.dp, colors.goldAccent.copy(alpha = 0.65f)),
+                            border = BorderStroke(
+                                width = 1.dp,
+                                brush = Brush.linearGradient(
+                                    listOf(
+                                        colors.goldAccent.copy(alpha = 0.78f),
+                                        colors.primaryBrand.copy(alpha = 0.45f)
+                                    )
+                                )
+                            ),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("daily_offer_banner")
@@ -945,8 +985,17 @@ fun CustomerStorefrontScreen(
                 Surface(
                     color = if (colors.isDark) colors.floatingDock.copy(alpha = 0.96f) else colors.cardSurface.copy(alpha = 0.98f),
                     shape = RoundedCornerShape(50),
-                    shadowElevation = 18.dp,
-                    border = BorderStroke(1.5.dp, colors.primaryBrand.copy(alpha = 0.72f)),
+                    shadowElevation = 20.dp,
+                    border = BorderStroke(
+                        width = 1.5.dp,
+                        brush = Brush.linearGradient(
+                            listOf(
+                                colors.primaryBrand,
+                                colors.goldAccent,
+                                colors.primaryBrand
+                            )
+                        )
+                    ),
                     modifier = Modifier
                         .widthIn(max = 680.dp)
                         .fillMaxWidth()
@@ -1090,7 +1139,15 @@ private fun ChefSignatureCard(
         colors = CardDefaults.cardColors(
             containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface
         ),
-        border = BorderStroke(1.dp, colors.goldAccent.copy(alpha = 0.5f)),
+        border = BorderStroke(
+            width = 1.dp,
+            brush = Brush.linearGradient(
+                listOf(
+                    colors.goldAccent.copy(alpha = 0.65f),
+                    colors.primaryBrand.copy(alpha = 0.35f)
+                )
+            )
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 4.dp),
         modifier = Modifier
             .width(206.dp)
@@ -1214,18 +1271,30 @@ private fun GourmetCustomerMenuItemCard(
         label = "card_fav_bounce"
     )
 
+    val cardBorderBrush = when {
+        quantityInCart > 0.0 -> Brush.linearGradient(
+            listOf(colors.primaryBrand, colors.goldAccent)
+        )
+        colors.isDark -> Brush.linearGradient(
+            listOf(
+                colors.glassBorder,
+                colors.goldAccent.copy(alpha = 0.22f),
+                colors.glassBorder
+            )
+        )
+        else -> Brush.linearGradient(
+            listOf(colors.cardBorder, colors.cardBorder)
+        )
+    }
+
     Card(
         onClick = onCardClick,
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
             .border(
-                width = if (quantityInCart > 0.0) 1.5.dp else 1.dp,
-                color = when {
-                    quantityInCart > 0.0 -> colors.primaryBrand
-                    colors.isDark -> colors.glassBorder
-                    else -> colors.cardBorder
-                },
+                width = if (quantityInCart > 0.0) 1.6.dp else 1.dp,
+                brush = cardBorderBrush,
                 shape = RoundedCornerShape(22.dp)
             )
             .testTag("customer_menu_item_${menuItem.id}"),
