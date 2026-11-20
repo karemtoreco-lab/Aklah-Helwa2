@@ -21,6 +21,7 @@ import com.example.util.Base64ImageUtils
 import com.example.util.DateUtils
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -34,12 +35,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 
-/**
- * Runtime-configured Firebase Firestore Cloud Sync Manager.
- * Auto-initializes with hardcoded `akla-helwa` credentials so Customer & Admin devices
- * stay continuously synchronized in real time across menu items (with Base64 photos),
- * customer orders & live status tracking, user presence/analytics, and store settings.
- */
 class CloudSyncManager(
     private val context: Context,
     private val scope: CoroutineScope,
@@ -311,7 +306,7 @@ class CloudSyncManager(
                 val tracked = snapshot.documents.mapNotNull { doc ->
                     val cid = doc.getString("cloudId") ?: doc.id
                     @Suppress("UNCHECKED_CAST")
-                    val rawItems = doc.get("lineItems") as? List<Map<String, Any?>> ?: emptyList()
+                    val rawItems = doc.get("lineItems") as? List> ?: emptyList()
                     val items = rawItems.map { map ->
                         TrackedOrderLineItem(
                             menuItemId = (map["menuItemId"] as? Number)?.toLong() ?: 0L,
@@ -348,6 +343,16 @@ class CloudSyncManager(
             .addSnapshotListener { snapshot, error ->
                 if (error != null || snapshot == null) return@addSnapshotListener
                 scope.launch(Dispatchers.IO) {
+                    // Handle deleted orders from cloud so they are removed locally too
+                    for (change in snapshot.documentChanges) {
+                        if (change.type == DocumentChange.Type.REMOVED) {
+                            val removedCloudId = change.document.getString("cloudId") ?: change.document.id
+                            orderRepository.getOrderByCloudId(removedCloudId)?.let { localToDelete ->
+                                orderRepository.deleteOrder(localToDelete)
+                            }
+                        }
+                    }
+
                     val prodMap = businessRepository.getAllProductsOnce().associateBy { it.id }
                     for (doc in snapshot.documents) {
                         val cloudId = doc.getString("cloudId") ?: doc.id
@@ -375,7 +380,7 @@ class CloudSyncManager(
                         val ym = doc.getString("yearMonth") ?: DateUtils.getYearMonthFromTimestamp(orderDate)
 
                         @Suppress("UNCHECKED_CAST")
-                        val rawItems = doc.get("lineItems") as? List<Map<String, Any?>> ?: emptyList()
+                        val rawItems = doc.get("lineItems") as? List> ?: emptyList()
                         val lineEntities = rawItems.map { map ->
                             val productId = (map["productId"] as? Number)?.toLong()
                             val qty = (map["quantity"] as? Number)?.toDouble() ?: 1.0
@@ -466,7 +471,6 @@ class CloudSyncManager(
                 )
                 .await()
         } catch (_: Exception) {
-            // Presence updates fail silently offline
         }
     }
 
@@ -695,6 +699,20 @@ class CloudSyncManager(
                     ),
                     SetOptions.merge()
                 )
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteOrderFromCloud(cloudId: String): Result<Unit> {
+        if (cloudId.isBlank()) return Result.success(Unit)
+        val db = firestore ?: return Result.success(Unit)
+        return try {
+            db.collection(COL_ORDERS)
+                .document(cloudId)
+                .delete()
                 .await()
             Result.success(Unit)
         } catch (e: Exception) {
