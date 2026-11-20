@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.BuildConfig
 import com.example.data.AppDatabase
 import com.example.data.AppPreferences
 import com.example.data.BusinessRepository
@@ -35,7 +36,6 @@ import com.example.model.ProductEntity
 import com.example.model.ProductImageEntity
 import com.example.model.TopProductStat
 import com.example.model.TrackedCloudOrder
-import com.example.BuildConfig
 import com.example.util.Base64ImageUtils
 import com.example.util.DateUtils
 import com.example.util.ImageStorageUtils
@@ -89,7 +89,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             businessRepository.ensureInitialCatalog()
         }
 
-        // Immediately initialize Firebase with hardcoded akla-helwa credentials on launch
         cloudSyncManager.configureAndStart(CloudConfig(), enableAdminListeners = true)
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -110,14 +109,12 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Navigation Stage (Splash -> Onboarding (if new) -> Customer Storefront / Admin Panel)
     private val _appStage = MutableStateFlow(AppStage.SPLASH)
     val appStage: StateFlow<AppStage> = _appStage.asStateFlow()
 
     private val _selectedTab = MutableStateFlow(AppTab.DASHBOARD)
     val selectedTab: StateFlow<AppTab> = _selectedTab.asStateFlow()
 
-    // Persisted Preferences (Dark Mode defaults to true)
     val isDarkMode: StateFlow<Boolean> = appPreferences.isDarkMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -175,7 +172,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     private val _isUpdateDismissed = MutableStateFlow(false)
     val isUpdateDismissed: StateFlow<Boolean> = _isUpdateDismissed.asStateFlow()
 
-    // Orders & Search
     private val _selectedYearMonth = MutableStateFlow(DateUtils.getCurrentYearMonth())
     val selectedYearMonth: StateFlow<String> = _selectedYearMonth.asStateFlow()
 
@@ -185,7 +181,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     private val _statusFilter = MutableStateFlow<String?>(null)
     val statusFilter: StateFlow<String?> = _statusFilter.asStateFlow()
 
-    // Order form dialog state
     private val _editingOrder = MutableStateFlow<Order?>(null)
     val editingOrder: StateFlow<Order?> = _editingOrder.asStateFlow()
 
@@ -201,7 +196,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     private val _celebrationMessage = MutableStateFlow<String?>(null)
     val celebrationMessage: StateFlow<String?> = _celebrationMessage.asStateFlow()
 
-    // Menu preview & export state
     private val _previewBitmaps = MutableStateFlow<List<Bitmap>>(emptyList())
     val previewBitmaps: StateFlow<List<Bitmap>> = _previewBitmaps.asStateFlow()
 
@@ -214,11 +208,9 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiMessage = MutableStateFlow<String?>(null)
     val uiMessage: StateFlow<String?> = _uiMessage.asStateFlow()
 
-    // Customer Storefront Cart
     private val _customerCart = MutableStateFlow<List<CustomerCartItem>>(emptyList())
     val customerCart: StateFlow<List<CustomerCartItem>> = _customerCart.asStateFlow()
 
-    // Catalog Flows
     val categories: StateFlow<List<CategoryEntity>> = businessRepository.allCategories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -228,7 +220,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     val productImages: StateFlow<List<ProductImageEntity>> = businessRepository.allProductImages
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val primaryImagesMap: StateFlow<Map<Long, String>> = productImages
+    val primaryImagesMap: StateFlow> = productImages
         .combine(products) { imgs, _ ->
             imgs.groupBy { it.productId }
                 .mapValues { (_, list) -> list.firstOrNull { it.isPrimary }?.imagePath ?: list.first().imagePath }
@@ -236,19 +228,17 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    val imagesByProductMap: StateFlow<Map<Long, List<ProductImageEntity>>> = productImages
+    val imagesByProductMap: StateFlow>> = productImages
         .combine(products) { imgs, _ -> imgs.groupBy { it.productId } }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    // Unified Published Menu Flows (Admin local DB + Firestore sync)
     val menuCategories: StateFlow<List<MenuCategoryEntity>> = businessRepository.menuCategories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val menuItems: StateFlow<List<MenuItemEntity>> = businessRepository.menuItems
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Storefront Menu Flows (uses real-time Firestore menu when synced, falls back cleanly to local Room menu)
     val storefrontCategories: StateFlow<List<MenuCategoryEntity>> = combine(
         menuCategories,
         cloudSyncManager.cloudMenuCategories
@@ -274,7 +264,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     val generatedMenus: StateFlow<List<GeneratedMenuEntity>> = businessRepository.generatedMenus
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Orders & Expenses Flows
     val availableMonths: StateFlow<List<String>> = orderRepository.distinctMonths
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf(DateUtils.getCurrentYearMonth()))
 
@@ -285,7 +274,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     val allLineItems: StateFlow<List<OrderLineItemEntity>> = orderRepository.allLineItems
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val orderItemsMap: StateFlow<Map<Long, List<OrderLineItemEntity>>> = allLineItems
+    val orderItemsMap: StateFlow>> = allLineItems
         .combine(ordersForSelectedMonth) { items, _ -> items.groupBy { it.orderId } }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
@@ -415,7 +404,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    // Customer-First App Stage & Onboarding
     fun completeSplash() {
         if (_appStage.value != AppStage.SPLASH) return
         viewModelScope.launch {
@@ -480,7 +468,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // User Presence Heartbeat (Firestore app_users/{userId})
     fun setUserPresence(isOnline: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             val profile = appPreferences.customerProfile.first()
@@ -668,7 +655,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         _celebrationMessage.value = null
     }
 
-    // Customer Favorites & Reorder
     fun toggleFavorite(menuItemId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             appPreferences.toggleFavoriteMenuItem(menuItemId)
@@ -711,7 +697,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Customer Storefront Cart Actions
     fun addToCustomerCart(menuItem: MenuItemEntity, imagePath: String?, quantityToAdd: Double = 1.0) {
         val current = _customerCart.value.toMutableList()
         val idx = current.indexOfFirst { it.menuItem.id == menuItem.id }
@@ -899,7 +884,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Navigation & Filters
     fun setTab(tab: AppTab) { _selectedTab.value = tab }
     fun selectMonth(yearMonth: String) { _selectedYearMonth.value = yearMonth }
     fun previousMonth() { _selectedYearMonth.value = DateUtils.getPreviousMonth(_selectedYearMonth.value) }
@@ -908,7 +892,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     fun setStatusFilter(status: String?) { _statusFilter.value = status }
     fun clearUiMessage() { _uiMessage.value = null }
 
-    // Order Dialog & Multi-Product Line Items
     fun openAddOrderDialog(orderToEdit: Order? = null) {
         viewModelScope.launch {
             _editingOrder.value = orderToEdit
@@ -1031,10 +1014,14 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteOrder(order: Order) {
         viewModelScope.launch(Dispatchers.IO) {
             orderRepository.deleteOrder(order)
+            if (order.cloudId.isNotBlank()) {
+                cloudSyncManager.deleteOrderFromCloud(order.cloudId)
+            }
             withContext(Dispatchers.Main) {
                 if (_selectedOrderDetails.value?.id == order.id) {
                     _selectedOrderDetails.value = null
                 }
+                _uiMessage.value = "تم حذف الأوردر نهائياً من التطبيق والسحابة 🗑️"
             }
         }
     }
@@ -1076,7 +1063,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Unified Catalog & Menu CRUD (synced cleanly to Firestore `menu_items`)
     fun saveCategory(id: Long = 0L, name: String) {
         if (name.isBlank()) return
         viewModelScope.launch(Dispatchers.IO) {
@@ -1131,7 +1117,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                         sortOrder = sortOrder
                     )
                 )
-                // Unified Menu & Items: automatically mirror to menu_items + Firestore
                 val catName = categories.value.find { it.id == categoryId }?.name
                 val targetMenuCatId = menuCategories.value.find { it.name == catName }?.id
                     ?: menuCategories.value.firstOrNull()?.id
@@ -1188,438 +1173,4 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             val nextActive = !product.isActive
             businessRepository.updateProduct(product.copy(isActive = nextActive))
             businessRepository.getMenuItemByProductIdOnce(product.id)?.let { linked ->
-                businessRepository.updateMenuItem(linked.copy(isVisible = nextActive))
-                autoSyncMenuIfConfigured()
-            }
-        }
-    }
-
-    fun deleteProduct(product: ProductEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            productImages.value.filter { it.productId == product.id }.forEach {
-                ImageStorageUtils.deleteStoredFile(it.imagePath)
-            }
-            businessRepository.getMenuItemByProductIdOnce(product.id)?.let { linked ->
-                businessRepository.deleteMenuItem(linked)
-                autoSyncMenuIfConfigured()
-            }
-            businessRepository.deleteProduct(product)
-        }
-    }
-
-    // Product Images Gallery (Local Catalog + automatic Base64 sync to linked Menu Item if < 3)
-    fun addProductImagesFromUris(productId: Long, uris: List<Uri>) {
-        if (uris.isEmpty()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            val ctx = getApplication<Application>()
-            val newBase64Photos = mutableListOf<String>()
-            uris.forEach { uri ->
-                val savedPath = ImageStorageUtils.copyProductImageToInternalStorage(ctx, uri, productId)
-                if (savedPath != null) {
-                    businessRepository.insertProductImage(
-                        ProductImageEntity(productId = productId, imagePath = savedPath)
-                    )
-                }
-                val encodedDataUri = ImageUtils.compressUriToBase64DataUri(ctx, uri)
-                if (!encodedDataUri.isNullOrBlank()) {
-                    newBase64Photos.add(encodedDataUri)
-                }
-            }
-            if (newBase64Photos.isNotEmpty()) {
-                businessRepository.getMenuItemByProductIdOnce(productId)?.let { linkedMenu ->
-                    val existing = linkedMenu.photoList().toMutableList()
-                    val slots = (3 - existing.size).coerceAtLeast(0)
-                    if (slots > 0) {
-                        existing.addAll(newBase64Photos.take(slots))
-                        businessRepository.updateMenuItem(
-                            linkedMenu.copy(photosJson = Base64ImageUtils.encodePhotosJson(existing))
-                        )
-                        autoSyncMenuIfConfigured()
-                    }
-                }
-            }
-        }
-    }
-
-    fun setPrimaryProductImage(productId: Long, imageId: Long) {
-        viewModelScope.launch(Dispatchers.IO) {
-            businessRepository.setPrimaryImage(productId, imageId)
-        }
-    }
-
-    fun deleteProductImage(image: ProductImageEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            ImageStorageUtils.deleteStoredFile(image.imagePath)
-            businessRepository.deleteProductImage(image)
-        }
-    }
-
-    // Unified Menu Multi-Photo Base64 Upload (up to 3 compressed <=640px JPEG 72% Data URIs synced to Firestore)
-    fun addMenuItemPhotosFromUris(menuItem: MenuItemEntity, uris: List<Uri>) {
-        if (uris.isEmpty()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            val ctx = getApplication<Application>()
-            val latest = businessRepository.getMenuItemByIdOnce(menuItem.id) ?: menuItem
-            val currentPhotos = latest.photoList().toMutableList()
-            val remainingSlots = (3 - currentPhotos.size).coerceAtLeast(0)
-            if (remainingSlots == 0) {
-                withContext(Dispatchers.Main) {
-                    _uiMessage.value = "الحد الأقصى للصور هو 3 صور لكل صنف"
-                }
-                return@launch
-            }
-            var addedCount = 0
-            uris.take(remainingSlots).forEach { uri ->
-                val encoded = ImageUtils.compressUriToBase64DataUri(ctx, uri)
-                if (!encoded.isNullOrBlank()) {
-                    currentPhotos.add(encoded)
-                    addedCount++
-                }
-            }
-            if (addedCount > 0) {
-                businessRepository.updateMenuItem(
-                    latest.copy(photosJson = Base64ImageUtils.encodePhotosJson(currentPhotos))
-                )
-                autoSyncMenuIfConfigured()
-            }
-            withContext(Dispatchers.Main) {
-                _uiMessage.value = if (addedCount > 0) {
-                    "تم ضغط ورفع $addedCount صورة ومزامنتها مع السحابة بنجاح 📸"
-                } else {
-                    "تعذر قراءة الصورة المختارة، يرجى المحاولة بصورة أخرى"
-                }
-            }
-        }
-    }
-
-    fun removeMenuItemPhotoAt(menuItem: MenuItemEntity, photoIndex: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val latest = businessRepository.getMenuItemByIdOnce(menuItem.id) ?: menuItem
-            val currentPhotos = latest.photoList().toMutableList()
-            if (photoIndex in currentPhotos.indices) {
-                currentPhotos.removeAt(photoIndex)
-                businessRepository.updateMenuItem(
-                    latest.copy(photosJson = Base64ImageUtils.encodePhotosJson(currentPhotos))
-                )
-                autoSyncMenuIfConfigured()
-            }
-        }
-    }
-
-    // Published Menu Actions
-    fun addMenuCategory(name: String) {
-        if (name.isBlank()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            val nextOrder = (menuCategories.value.maxOfOrNull { it.sortOrder } ?: -1) + 1
-            businessRepository.insertMenuCategory(MenuCategoryEntity(name = name.trim(), sortOrder = nextOrder))
-            autoSyncMenuIfConfigured()
-        }
-    }
-
-    fun updateMenuCategory(category: MenuCategoryEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            businessRepository.updateMenuCategory(category)
-            autoSyncMenuIfConfigured()
-        }
-    }
-
-    fun deleteMenuCategory(category: MenuCategoryEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            businessRepository.deleteMenuCategory(category)
-            autoSyncMenuIfConfigured()
-        }
-    }
-
-    fun moveMenuCategory(category: MenuCategoryEntity, moveUp: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val sorted = menuCategories.value.sortedBy { it.sortOrder }
-            val idx = sorted.indexOfFirst { it.id == category.id }
-            val targetIdx = if (moveUp) idx - 1 else idx + 1
-            if (idx in sorted.indices && targetIdx in sorted.indices) {
-                val mutable = sorted.toMutableList()
-                val moved = mutable.removeAt(idx)
-                mutable.add(targetIdx, moved)
-                businessRepository.updateMenuCategories(mutable.mapIndexed { i, c -> c.copy(sortOrder = i) })
-                autoSyncMenuIfConfigured()
-            }
-        }
-    }
-
-    fun addProductToMenu(
-        product: ProductEntity,
-        menuCategoryId: Long,
-        publishedPrice: Double = product.defaultSellingPrice,
-        isVariablePrice: Boolean = publishedPrice <= 0.0
-    ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val nextOrder = (menuItems.value.filter { it.menuCategoryId == menuCategoryId }
-                .maxOfOrNull { it.sortOrder } ?: -1) + 1
-            businessRepository.insertMenuItem(
-                MenuItemEntity(
-                    menuCategoryId = menuCategoryId,
-                    productId = product.id,
-                    displayName = product.name,
-                    unitLabel = product.unit,
-                    description = product.description,
-                    publishedPrice = publishedPrice,
-                    isVariablePrice = isVariablePrice,
-                    sortOrder = nextOrder,
-                    isVisible = true
-                )
-            )
-            autoSyncMenuIfConfigured()
-        }
-    }
-
-    fun addManualMenuItem(
-        menuCategoryId: Long,
-        displayName: String,
-        unitLabel: String,
-        description: String,
-        publishedPrice: Double,
-        isVariablePrice: Boolean,
-        isPopular: Boolean = false,
-        isPreOrder24h: Boolean = false,
-        photos: List<String> = emptyList()
-    ) {
-        if (displayName.isBlank()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            val nextOrder = (menuItems.value.filter { it.menuCategoryId == menuCategoryId }
-                .maxOfOrNull { it.sortOrder } ?: -1) + 1
-            businessRepository.insertMenuItem(
-                MenuItemEntity(
-                    menuCategoryId = menuCategoryId,
-                    productId = null,
-                    displayName = displayName.trim(),
-                    unitLabel = unitLabel.ifBlank { "كيلو" }.trim(),
-                    description = description.trim(),
-                    publishedPrice = publishedPrice,
-                    isVariablePrice = isVariablePrice,
-                    sortOrder = nextOrder,
-                    isVisible = true,
-                    photosJson = Base64ImageUtils.encodePhotosJson(photos),
-                    isPopular = isPopular,
-                    isPreOrder24h = isPreOrder24h
-                )
-            )
-            autoSyncMenuIfConfigured()
-        }
-    }
-
-    fun updateMenuItem(item: MenuItemEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            businessRepository.updateMenuItem(item)
-            item.productId?.let { pid ->
-                products.value.find { it.id == pid }?.let { linkedProd ->
-                    businessRepository.updateProduct(
-                        linkedProd.copy(
-                            name = item.displayName,
-                            unit = item.unitLabel,
-                            description = item.description,
-                            defaultSellingPrice = item.publishedPrice
-                        )
-                    )
-                }
-            }
-            autoSyncMenuIfConfigured()
-        }
-    }
-
-    fun restoreMenuItemDefaultPrice(item: MenuItemEntity) {
-        val productId = item.productId ?: return
-        val product = products.value.find { it.id == productId } ?: return
-        viewModelScope.launch(Dispatchers.IO) {
-            businessRepository.updateMenuItem(
-                item.copy(
-                    publishedPrice = product.defaultSellingPrice,
-                    isVariablePrice = product.defaultSellingPrice <= 0.0
-                )
-            )
-            autoSyncMenuIfConfigured()
-        }
-    }
-
-    fun deleteMenuItem(item: MenuItemEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            businessRepository.deleteMenuItem(item)
-            autoSyncMenuIfConfigured()
-        }
-    }
-
-    fun moveMenuItem(item: MenuItemEntity, moveUp: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val sameCat = menuItems.value
-                .filter { it.menuCategoryId == item.menuCategoryId }
-                .sortedBy { it.sortOrder }
-            val idx = sameCat.indexOfFirst { it.id == item.id }
-            val targetIdx = if (moveUp) idx - 1 else idx + 1
-            if (idx in sameCat.indices && targetIdx in sameCat.indices) {
-                val mutable = sameCat.toMutableList()
-                val moved = mutable.removeAt(idx)
-                mutable.add(targetIdx, moved)
-                businessRepository.updateMenuItems(mutable.mapIndexed { i, m -> m.copy(sortOrder = i) })
-                autoSyncMenuIfConfigured()
-            }
-        }
-    }
-
-    // Live Menu Preview & High-Res PNG Export
-    fun setPreviewCategoryFilter(categoryId: Long?) {
-        _selectedPreviewCategoryId.value = categoryId
-        refreshMenuPreview(categoryId)
-    }
-
-    fun refreshMenuPreview(singleCategoryId: Long? = _selectedPreviewCategoryId.value) {
-        viewModelScope.launch {
-            _isGeneratingPreview.value = true
-            val cats = menuCategories.value.sortedBy { it.sortOrder }
-            val itemsByCat = menuItems.value.sortedBy { it.sortOrder }.groupBy { it.menuCategoryId }
-            val sections = cats.map { cat -> MenuPosterSection(cat, itemsByCat[cat.id].orEmpty()) }
-            val ctx = getApplication<Application>()
-
-            val bitmaps = withContext(Dispatchers.IO) {
-                MenuPosterRenderer.renderMenuPages(ctx, sections, singleCategoryId)
-            }
-            _previewBitmaps.value = bitmaps
-            _isGeneratingPreview.value = false
-        }
-    }
-
-    fun exportMenuToPng(
-        singleCategoryId: Long? = _selectedPreviewCategoryId.value,
-        singlePageZeroIndex: Int? = null,
-        onExportComplete: (List<String>) -> Unit = {}
-    ) {
-        viewModelScope.launch {
-            _isGeneratingPreview.value = true
-            val cats = menuCategories.value.sortedBy { it.sortOrder }
-            val itemsByCat = menuItems.value.sortedBy { it.sortOrder }.groupBy { it.menuCategoryId }
-            val sections = cats.map { cat -> MenuPosterSection(cat, itemsByCat[cat.id].orEmpty()) }
-            val ctx = getApplication<Application>()
-
-            val savedPaths = withContext(Dispatchers.IO) {
-                val rendered = MenuPosterRenderer.renderMenuPages(ctx, sections, singleCategoryId)
-                _previewBitmaps.value = rendered
-                val pagesToSave = if (singlePageZeroIndex != null && singlePageZeroIndex in rendered.indices) {
-                    listOf(singlePageZeroIndex to rendered[singlePageZeroIndex])
-                } else {
-                    rendered.mapIndexed { i, bmp -> i to bmp }
-                }
-
-                val catName = singleCategoryId?.let { id -> cats.find { it.id == id }?.name } ?: "المنيو_الكامل"
-                pagesToSave.mapNotNull { (idx, bmp) ->
-                    val path = ImageStorageUtils.saveExportedMenuPng(ctx, bmp, "akleh_helwa_menu_p${idx + 1}")
-                    if (path != null) {
-                        businessRepository.insertGeneratedMenu(
-                            GeneratedMenuEntity(
-                                title = if (rendered.size > 1) "$catName - صفحة ${idx + 1}" else catName,
-                                filePath = path,
-                                pageIndex = idx + 1,
-                                totalPages = rendered.size
-                            )
-                        )
-                    }
-                    path
-                }
-            }
-
-            _isGeneratingPreview.value = false
-            _uiMessage.value = if (savedPaths.isNotEmpty()) {
-                "تم حفظ وتصدير المنيو (${savedPaths.size} صورة) في المعرض"
-            } else {
-                "تعذر تصدير المنيو"
-            }
-            onExportComplete(savedPaths)
-        }
-    }
-
-    fun deleteGeneratedMenu(export: GeneratedMenuEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            ImageStorageUtils.deleteStoredFile(export.filePath)
-            businessRepository.deleteGeneratedMenu(export)
-        }
-    }
-
-    // Separate Expenses
-    fun saveExpense(title: String, category: String, amount: Double, notes: String = "") {
-        if (title.isBlank() || amount <= 0.0) return
-        viewModelScope.launch(Dispatchers.IO) {
-            val now = System.currentTimeMillis()
-            businessRepository.insertExpense(
-                ExpenseEntity(
-                    title = title.trim(),
-                    category = category.ifBlank { "تشغيل ومواصلات" },
-                    amount = amount,
-                    expenseDate = now,
-                    yearMonth = _selectedYearMonth.value,
-                    notes = notes.trim()
-                )
-            )
-        }
-    }
-
-    fun deleteExpense(expense: ExpenseEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            businessRepository.deleteExpense(expense)
-        }
-    }
-
-    // Share text helpers
-    fun generateMonthlyReportText(): String {
-        val stats = monthlyStats.value
-        val monthArabic = DateUtils.formatYearMonthArabic(_selectedYearMonth.value)
-        return buildString {
-            appendLine("🍲 *تقرير مبيعات وأرباح مشروع أكلة حلوة* 🍲")
-            appendLine("👩‍🍳 *إدارة:* أ/ نهى ماهر")
-            appendLine("📅 *شهر:* $monthArabic")
-            appendLine("━━━━━━━━━━━━━━━━━━")
-            appendLine("💰 *إجمالي المبيعات:* ${DateUtils.formatCurrency(stats.totalSales)}")
-            appendLine("🛒 *إجمالي تكلفة الشراء:* ${DateUtils.formatCurrency(stats.totalPurchaseCost)}")
-            appendLine("💵 *إجمالي الربح (قبل المصاريف):* ${DateUtils.formatCurrency(stats.grossProfitBeforeExpenses)}")
-            appendLine("🧾 *المصاريف المنفصلة:* ${DateUtils.formatCurrency(stats.totalExpenses)}")
-            appendLine("📦 *عدد الأوردرات:* ${stats.totalOrdersCount} أوردر (${stats.uniqueCustomersCount} عميل)")
-            appendLine("━━━━━━━━━━━━━━━━━━")
-            appendLine("أكلة حلوة.. بالهنا والشفا دائماً ❤️")
-        }
-    }
-
-    fun generateOrderReceiptText(order: Order): String {
-        val statusArabic = OrderStatus.trackingTitle(order.status)
-        val paymentArabic = when (order.paymentStatus) {
-            PaymentStatus.PAID.name -> PaymentStatus.PAID.titleAr
-            PaymentStatus.PARTIAL.name -> PaymentStatus.PARTIAL.titleAr
-            else -> PaymentStatus.UNPAID.titleAr
-        }
-        val items = orderItemsMap.value[order.id].orEmpty()
-
-        return buildString {
-            appendLine("🍲 *فاتورة طلب - مشروع أكلة حلوة* 🍲")
-            appendLine("👩‍🍳 *بإدارة:* نهى ماهر")
-            appendLine("👤 *العميل:* ${order.customerName}")
-            if (order.customerPhone.isNotBlank()) appendLine("📱 *الهاتف:* ${order.customerPhone}")
-            if (order.deliveryZone.isNotBlank()) appendLine("🗺️ *منطقة التوصيل:* ${order.deliveryZone}")
-            if (order.deliveryAddress.isNotBlank()) appendLine("📍 *العنوان:* ${order.deliveryAddress}")
-            appendLine("📅 *التاريخ:* ${DateUtils.formatDate(order.orderDate)}")
-            appendLine("━━━━━━━━━━━━━━━━━━")
-            appendLine("🍽️ *الأصناف المطلوبة:*")
-            if (items.isNotEmpty()) {
-                items.forEach { li ->
-                    val q = if (li.quantity % 1.0 == 0.0) li.quantity.toInt().toString() else li.quantity.toString()
-                    appendLine("• $q × ${li.productNameSnapshot} (${DateUtils.formatCurrency(li.totalSellingPrice)})")
-                }
-            } else {
-                appendLine(order.itemsDescription)
-            }
-            appendLine("━━━━━━━━━━━━━━━━━━")
-            if (order.shippingFee > 0.0) {
-                appendLine("🛵 *رسوم التوصيل:* ${DateUtils.formatCurrency(order.shippingFee)}")
-            }
-            appendLine("💵 *الإجمالي المطلوب:* ${DateUtils.formatCurrency(order.salePrice + order.shippingFee)}")
-            appendLine("💳 *حالة الدفع:* $paymentArabic")
-            appendLine("📦 *حالة الطلب:* $statusArabic")
-            if (order.notes.isNotBlank()) appendLine("📝 *ملاحظات:* ${order.notes}")
-            appendLine("━━━━━━━━━━━━━━━━━━")
-            appendLine("شكراً لاختياركم أكلة حلوة! بالهنا والشفا ❤️")
-        }
-    }
-}
+                businessRepository.updateMenuItem(linked
