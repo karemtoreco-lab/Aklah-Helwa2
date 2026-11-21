@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -44,9 +45,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.components.CheckeredRibbon
 import com.example.ui.theme.AppTheme
@@ -62,6 +65,7 @@ fun SplashScreen(
     val logoScale = remember { Animatable(0.45f) }
     val logoAlpha = remember { Animatable(0f) }
     val textAlpha = remember { Animatable(0f) }
+    val progressAnim = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
         launch {
@@ -77,6 +81,12 @@ fun SplashScreen(
             logoAlpha.animateTo(
                 targetValue = 1f,
                 animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing)
+            )
+        }
+        launch {
+            progressAnim.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 1650, easing = LinearEasing)
             )
         }
         delay(220)
@@ -96,7 +106,7 @@ fun SplashScreen(
                     listOf(
                         colors.background,
                         colors.secondarySurface,
-                        colors.primaryContainer.copy(alpha = 0.45f)
+                        colors.primaryContainer.copy(alpha = 0.55f)
                     )
                 )
             )
@@ -118,36 +128,55 @@ fun SplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(164.dp)
-                    .graphicsLayer {
-                        scaleX = logoScale.value
-                        scaleY = logoScale.value
-                        alpha = logoAlpha.value
-                    }
-                    .shadow(
-                        elevation = 18.dp,
-                        shape = CircleShape,
-                        spotColor = colors.primaryBrand.copy(alpha = 0.45f)
-                    )
-                    .clip(CircleShape)
-                    .background(colors.cardSurface)
-                    .border(
-                        width = 3.dp,
-                        brush = colors.warmAccentGradient,
-                        shape = CircleShape
-                    )
-                    .padding(6.dp)
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.app_logo),
-                    contentDescription = "شعار أكلة حلوة",
-                    contentScale = ContentScale.Crop,
+            Box(contentAlignment = Alignment.Center) {
+                // Soft ambient radial glow behind logo
+                Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape)
+                        .size(210.dp)
+                        .graphicsLayer { alpha = logoAlpha.value * 0.45f }
+                        .background(
+                            Brush.radialGradient(
+                                listOf(
+                                    colors.goldAccent.copy(alpha = 0.45f),
+                                    colors.primaryBrand.copy(alpha = 0.15f),
+                                    Color.Transparent
+                                )
+                            ),
+                            CircleShape
+                        )
                 )
+
+                Box(
+                    modifier = Modifier
+                        .size(168.dp)
+                        .graphicsLayer {
+                            scaleX = logoScale.value
+                            scaleY = logoScale.value
+                            alpha = logoAlpha.value
+                        }
+                        .shadow(
+                            elevation = 22.dp,
+                            shape = CircleShape,
+                            spotColor = colors.primaryBrand.copy(alpha = 0.5f)
+                        )
+                        .clip(CircleShape)
+                        .background(colors.cardSurface)
+                        .border(
+                            width = 3.5.dp,
+                            brush = colors.warmAccentGradient,
+                            shape = CircleShape
+                        )
+                        .padding(6.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.app_logo),
+                        contentDescription = "شعار أكلة حلوة",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(22.dp))
@@ -158,9 +187,10 @@ fun SplashScreen(
             ) {
                 Text(
                     text = "أكلة حلوة",
-                    style = MaterialTheme.typography.displaySmall,
+                    style = MaterialTheme.typography.displaySmall.merge(
+                        TextStyle(brush = colors.warmAccentGradient)
+                    ),
                     fontWeight = FontWeight.ExtraBold,
-                    color = colors.primaryBrand,
                     textAlign = TextAlign.Center
                 )
 
@@ -179,20 +209,27 @@ fun SplashScreen(
                 Surface(
                     color = colors.cardSurface,
                     shape = RoundedCornerShape(50),
-                    border = BorderStroke(1.5.dp, colors.goldAccent.copy(alpha = 0.65f)),
-                    shadowElevation = 4.dp,
+                    border = BorderStroke(1.5.dp, colors.goldAccent.copy(alpha = 0.7f)),
+                    shadowElevation = 6.dp,
                     modifier = Modifier.testTag("splash_owner_badge")
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Restaurant,
-                            contentDescription = null,
-                            tint = colors.primaryBrand,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(26.dp)
+                                .background(colors.warmAccentGradient, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Restaurant,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "إدارة: نهى ماهر",
@@ -213,9 +250,29 @@ fun SplashScreen(
                 .graphicsLayer { alpha = textAlpha.value },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Sleek loading progress bar
+            Box(
+                modifier = Modifier
+                    .width(150.dp)
+                    .height(4.dp)
+                    .clip(CircleShape)
+                    .background(colors.cardBorder)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progressAnim.value)
+                        .height(4.dp)
+                        .clip(CircleShape)
+                        .background(colors.warmAccentGradient)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             Text(
                 text = "اضغط في أي مكان للمتابعة",
                 style = MaterialTheme.typography.labelMedium,
+                fontSize = 12.sp,
                 color = colors.textSecondary
             )
             Spacer(modifier = Modifier.height(12.dp))
