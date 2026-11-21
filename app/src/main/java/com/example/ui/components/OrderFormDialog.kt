@@ -175,63 +175,73 @@ fun OrderFormDialog(
                 .widthIn(max = 620.dp)
                 .fillMaxWidth()
                 .imePadding()
-                .shadow(14.dp, RoundedCornerShape(26.dp))
-                .clip(RoundedCornerShape(26.dp))
-                .border(1.dp, colors.cardBorder, RoundedCornerShape(26.dp))
+                .shadow(18.dp, RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(28.dp))
+                .border(1.2.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(28.dp))
                 .testTag("order_form_dialog"),
             color = colors.cardSurface
         ) {
             Column(
                 modifier = Modifier
-                    .padding(18.dp)
                     .verticalScroll(rememberScrollState())
+                    .padding(18.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Surface(
+                    color = colors.secondarySurface,
+                    shape = RoundedCornerShape(22.dp),
+                    border = BorderStroke(1.dp, colors.cardBorder),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .shadow(6.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.35f))
+                                    .background(colors.warmAccentGradient, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (initialOrder == null) Icons.Default.Add else Icons.Default.Restaurant,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = if (initialOrder == null) "تسجيل أوردر جديد" else "تعديل الأوردر",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = colors.textPrimary
+                                )
+                                Text(
+                                    text = "أضف صنف واحد أو عدة أصناف للأوردر",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colors.textSecondary
+                                )
+                            }
+                        }
+
                         Box(
                             modifier = Modifier
-                                .size(44.dp)
-                                .background(colors.warmAccentGradient, CircleShape),
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(colors.cardSurface)
+                                .border(1.dp, colors.cardBorder, CircleShape)
+                                .bounceClick(onClick = onDismiss)
+                                .testTag("close_order_dialog_btn"),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = if (initialOrder == null) Icons.Default.Add else Icons.Default.Restaurant,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp)
-                            )
+                            Icon(Icons.Default.Close, contentDescription = "إغلاق", tint = colors.textPrimary, modifier = Modifier.size(18.dp))
                         }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = if (initialOrder == null) "تسجيل أوردر جديد" else "تعديل الأوردر",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = colors.textPrimary
-                            )
-                            Text(
-                                text = "أضف صنف واحد أو عدة أصناف للأوردر",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = colors.textSecondary
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(colors.secondarySurface)
-                            .border(1.dp, colors.cardBorder, CircleShape)
-                            .bounceClick(onClick = onDismiss)
-                            .testTag("close_order_dialog_btn"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = "إغلاق", tint = colors.textPrimary, modifier = Modifier.size(18.dp))
                     }
                 }
 
@@ -296,7 +306,7 @@ fun OrderFormDialog(
                     Text(
                         text = "أصناف الأوردر (${lineItems.size})",
                         style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
                         color = colors.textPrimary
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -381,7 +391,7 @@ fun OrderFormDialog(
                         .border(1.dp, colors.profitGreen.copy(alpha = 0.45f), RoundedCornerShape(20.dp))
                         .testTag("order_totals_summary_card"),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = colors.profitContainer.copy(alpha = 0.75f))
+                    colors = CardDefaults.cardColors(containerColor = colors.profitContainer.copy(alpha = 0.78f))
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         SummaryRow("إجمالي تكلفة الشراء:", DateUtils.formatCurrencyWithDecimal(totalPurchase), colors.textSecondary)
@@ -465,6 +475,7 @@ fun OrderFormDialog(
                         .fillMaxWidth()
                         .defaultMinSize(minHeight = 54.dp)
                         .wrapContentHeight()
+                        .shadow(10.dp, RoundedCornerShape(50), spotColor = colors.primaryBrand.copy(alpha = 0.45f))
                         .clip(RoundedCornerShape(50))
                         .background(colors.warmAccentGradient)
                         .bounceClick {
