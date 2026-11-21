@@ -50,10 +50,6 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.theme.AppTheme
 import com.example.util.DateUtils
 
-/**
- * Quick inline order entry card styled with the adaptive [AppTheme.colors] palette
- * (Gourmet Espresso Dark & Warm Ivory Light) for rapid Admin order recording.
- */
 @Composable
 fun QuickOrderEntryCard(
     onSaveQuickOrder: (
@@ -108,7 +104,8 @@ fun QuickOrderEntryCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(38.dp)
+                            .shadow(6.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.35f))
                             .clip(CircleShape)
                             .background(colors.warmAccentGradient),
                         contentAlignment = Alignment.Center
@@ -117,7 +114,7 @@ fun QuickOrderEntryCard(
                             imageVector = Icons.Default.Bolt,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
@@ -136,25 +133,26 @@ fun QuickOrderEntryCard(
                     }
                 }
 
+                val isPositive = grossProfit >= 0.0
                 Surface(
-                    color = colors.profitContainer,
+                    color = if (isPositive) colors.profitContainer else colors.primaryContainer,
                     shape = RoundedCornerShape(50),
-                    border = BorderStroke(1.dp, colors.profitGreen.copy(alpha = 0.45f))
+                    border = BorderStroke(1.dp, (if (isPositive) colors.profitGreen else colors.primaryBrand).copy(alpha = 0.45f))
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.TrendingUp,
                             contentDescription = null,
-                            tint = colors.profitGreen,
+                            tint = if (isPositive) colors.profitGreen else colors.primaryBrand,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = DateUtils.formatCurrency(grossProfit),
-                            color = colors.onProfitContainer,
+                            color = if (isPositive) colors.onProfitContainer else colors.onPrimaryContainer,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 12.sp
                         )
@@ -272,7 +270,7 @@ fun QuickOrderEntryCard(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .defaultMinSize(minHeight = 48.dp)
+                    .defaultMinSize(minHeight = 50.dp)
                     .bounceClick()
                     .testTag("quick_order_save_btn")
             ) {
