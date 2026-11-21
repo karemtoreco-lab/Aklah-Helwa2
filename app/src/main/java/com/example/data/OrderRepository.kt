@@ -2,6 +2,7 @@ package com.example.data
 
 import com.example.model.Order
 import com.example.model.OrderLineItemEntity
+import com.example.model.TreasuryTransactionEntity
 import kotlinx.coroutines.flow.Flow
 
 class OrderRepository(private val orderDao: OrderDao) {
@@ -11,6 +12,8 @@ class OrderRepository(private val orderDao: OrderDao) {
     val distinctMonths: Flow<List<String>> = orderDao.getDistinctMonths()
 
     val allLineItems: Flow<List<OrderLineItemEntity>> = orderDao.getAllLineItems()
+
+    val allTreasuryTransactions: Flow<List<TreasuryTransactionEntity>> = orderDao.getAllTreasuryTransactions()
 
     fun getOrdersByMonth(yearMonth: String): Flow<List<Order>> {
         return orderDao.getOrdersByMonth(yearMonth)
@@ -46,5 +49,18 @@ class OrderRepository(private val orderDao: OrderDao) {
 
     suspend fun deleteOrderById(id: Long) {
         orderDao.deleteOrderById(id)
+    }
+
+    // Treasury & Capital
+    suspend fun getTreasuryTxByCloudId(cloudId: String): TreasuryTransactionEntity? {
+        return orderDao.getTreasuryTxByCloudId(cloudId)
+    }
+
+    suspend fun insertTreasuryTransaction(tx: TreasuryTransactionEntity): Long {
+        return orderDao.insertTreasuryTransaction(tx)
+    }
+
+    suspend fun deleteTreasuryTransaction(tx: TreasuryTransactionEntity) {
+        orderDao.deleteTreasuryTransaction(tx)
     }
 }
