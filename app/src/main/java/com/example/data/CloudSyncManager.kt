@@ -799,7 +799,17 @@ class CloudSyncManager(
             Result.failure(e)
         }
     }
-
+suspend fun deleteOrderFromCloud(cloudId: String) {
+        if (cloudId.isBlank()) return
+        val db = firestore ?: return
+        try {
+            db.collection(COL_ORDERS)
+                .document(cloudId)
+                .delete()
+                .await()
+        } catch (_: Exception) {
+        }
+    }
     companion object {
         const val CLOUD_APP_NAME = "akleh_helwa_cloud"
         const val COL_MENU_CATEGORIES = "menu_categories"
