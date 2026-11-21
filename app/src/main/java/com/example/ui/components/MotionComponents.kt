@@ -58,6 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -77,9 +78,6 @@ import com.example.ui.theme.AppTheme
 import com.example.util.DateUtils
 import kotlinx.coroutines.delay
 
-/**
- * GPU-accelerated spring bounce animation on press for buttons, cards, and action tiles.
- */
 fun Modifier.bounceClick(
     enabled: Boolean = true,
     scaleDown: Float = 0.96f,
@@ -124,9 +122,6 @@ fun Modifier.bounceClick(
     }
 }
 
-/**
- * Animated Sun/Moon Theme Switcher IconButton for the Top App Bar.
- */
 @Composable
 fun ThemeToggleIconButton(
     isDarkMode: Boolean,
@@ -146,10 +141,15 @@ fun ThemeToggleIconButton(
     IconButton(
         onClick = onToggle,
         modifier = modifier
-            .size(40.dp)
+            .size(42.dp)
+            .shadow(4.dp, CircleShape, ambientColor = colors.primaryBrand.copy(alpha = 0.2f))
             .clip(CircleShape)
-            .background(colors.secondarySurface)
-            .border(1.dp, colors.cardBorder, CircleShape)
+            .background(
+                Brush.linearGradient(
+                    listOf(colors.secondarySurface, colors.cardSurface)
+                )
+            )
+            .border(1.dp, colors.glassBorder, CircleShape)
             .testTag("theme_toggle_btn")
     ) {
         Icon(
@@ -163,9 +163,6 @@ fun ThemeToggleIconButton(
     }
 }
 
-/**
- * Animated Checkmark Celebration Dialog shown when saving or submitting an order.
- */
 @Composable
 fun OrderCelebrationDialog(
     message: String,
@@ -190,38 +187,50 @@ fun OrderCelebrationDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             color = colors.cardSurface,
-            shape = RoundedCornerShape(28.dp),
-            border = BorderStroke(1.dp, colors.profitGreen.copy(alpha = 0.4f)),
-            tonalElevation = 8.dp,
+            shape = RoundedCornerShape(30.dp),
+            border = BorderStroke(1.2.dp, colors.profitGreen.copy(alpha = 0.45f)),
+            tonalElevation = 10.dp,
+            shadowElevation = 18.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
                 .testTag("order_celebration_dialog")
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier
+                    .background(colors.cardHighlightGradient)
+                    .padding(26.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
-                        .size(84.dp)
-                        .graphicsLayer {
-                            scaleX = checkScale
-                            scaleY = checkScale
-                        }
+                        .size(92.dp)
                         .clip(CircleShape)
-                        .background(colors.mintGradient),
+                        .background(colors.profitGreen.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "تم بنجاح",
-                        tint = Color.White,
-                        modifier = Modifier.size(46.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(74.dp)
+                            .graphicsLayer {
+                                scaleX = checkScale
+                                scaleY = checkScale
+                            }
+                            .shadow(10.dp, CircleShape, spotColor = colors.profitGreen)
+                            .clip(CircleShape)
+                            .background(colors.mintGradient),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "تم بنجاح",
+                            tint = Color.White,
+                            modifier = Modifier.size(42.dp)
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 Text(
                     text = "بألف هنا وشفا! ✨",
@@ -240,7 +249,7 @@ fun OrderCelebrationDialog(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(22.dp))
 
                 Button(
                     onClick = onDismiss,
@@ -248,14 +257,14 @@ fun OrderCelebrationDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = colors.profitGreen),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .defaultMinSize(minHeight = 48.dp)
+                        .defaultMinSize(minHeight = 50.dp)
                         .bounceClick()
                         .testTag("celebration_ok_btn")
                 ) {
                     Text(
                         text = "حسناً",
                         color = Color.White,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.ExtraBold
                     )
                 }
             }
@@ -263,9 +272,6 @@ fun OrderCelebrationDialog(
     }
 }
 
-/**
- * Smoothly animated currency counter for Dashboard KPIs.
- */
 @Composable
 fun AnimatedCurrencyCounter(
     targetValue: Double,
@@ -287,9 +293,6 @@ fun AnimatedCurrencyCounter(
     )
 }
 
-/**
- * Smoothly animated integer counter for order and customer counts.
- */
 @Composable
 fun AnimatedIntCounter(
     targetValue: Int,
@@ -311,9 +314,6 @@ fun AnimatedIntCounter(
     )
 }
 
-/**
- * Lightweight 60fps fade + vertical slide entrance for lists.
- */
 @Composable
 fun StaggeredAppearItem(
     index: Int,
@@ -346,9 +346,6 @@ fun StaggeredAppearItem(
     }
 }
 
-/**
- * Pill-shaped Category Filter Chip with animated color transition and responsive wrapHeight.
- */
 @Composable
 fun CulinaryPillChip(
     label: String,
@@ -381,6 +378,7 @@ fun CulinaryPillChip(
         color = bgColor,
         shape = RoundedCornerShape(50),
         border = BorderStroke(1.dp, borderColor),
+        shadowElevation = if (selected) 4.dp else 0.dp,
         modifier = modifier
             .graphicsLayer {
                 scaleX = scale
@@ -394,18 +392,15 @@ fun CulinaryPillChip(
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium,
             color = if (selected) Color.White else colors.textSecondary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 15.dp, vertical = 9.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp)
         )
     }
 }
 
-/**
- * Interactive pill-shaped Quantity Stepper with animated color pulse & haptic feedback.
- */
 @Composable
 fun CulinaryQuantityStepper(
     quantityText: String,
@@ -480,6 +475,7 @@ fun CulinaryQuantityStepper(
             Box(
                 modifier = Modifier
                     .size(34.dp)
+                    .shadow(4.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.35f))
                     .clip(CircleShape)
                     .background(plusBg)
                     .bounceClick {
@@ -504,9 +500,6 @@ data class DockNavItem(
     val onClick: () -> Unit
 )
 
-/**
- * Floating Pill Bottom Navigation Dock adapting cleanly to Light/Dark Mode & System Navigation Insets.
- */
 @Composable
 fun FloatingNavDock(
     items: List<DockNavItem>,
@@ -521,11 +514,20 @@ fun FloatingNavDock(
         contentAlignment = Alignment.Center
     ) {
         Surface(
-            color = colors.floatingDock.copy(alpha = 0.98f),
+            color = colors.floatingDock,
             shape = RoundedCornerShape(32.dp),
-            border = BorderStroke(1.dp, colors.cardBorder),
-            tonalElevation = 8.dp,
-            shadowElevation = 10.dp,
+            border = BorderStroke(
+                1.dp,
+                Brush.horizontalGradient(
+                    listOf(
+                        colors.cardBorder,
+                        colors.primaryBrand.copy(alpha = 0.35f),
+                        colors.cardBorder
+                    )
+                )
+            ),
+            tonalElevation = 10.dp,
+            shadowElevation = 14.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
@@ -555,7 +557,7 @@ fun FloatingNavDock(
                         label = "dock_label"
                     )
                     val scale by animateFloatAsState(
-                        targetValue = if (item.selected) 1.05f else 1f,
+                        targetValue = if (item.selected) 1.06f else 1f,
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
                             stiffness = Spring.StiffnessMedium
@@ -583,7 +585,7 @@ fun FloatingNavDock(
                                     if (item.selected) {
                                         Brush.horizontalGradient(
                                             listOf(
-                                                colors.primaryBrand.copy(alpha = 0.22f),
+                                                colors.primaryBrand.copy(alpha = 0.24f),
                                                 colors.secondaryAccent.copy(alpha = 0.18f)
                                             )
                                         )
@@ -595,12 +597,12 @@ fun FloatingNavDock(
                                     if (item.selected) {
                                         Modifier.border(
                                             1.dp,
-                                            colors.primaryBrand.copy(alpha = 0.45f),
+                                            colors.primaryBrand.copy(alpha = 0.5f),
                                             RoundedCornerShape(50)
                                         )
                                     } else Modifier
                                 )
-                                .padding(horizontal = 12.dp, vertical = 5.dp),
+                                .padding(horizontal = 13.dp, vertical = 5.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -614,7 +616,7 @@ fun FloatingNavDock(
                         Text(
                             text = item.title,
                             fontSize = 10.sp,
-                            fontWeight = if (item.selected) FontWeight.Bold else FontWeight.Medium,
+                            fontWeight = if (item.selected) FontWeight.ExtraBold else FontWeight.Medium,
                             color = labelColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
