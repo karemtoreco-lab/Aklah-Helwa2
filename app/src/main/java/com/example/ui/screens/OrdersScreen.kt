@@ -113,7 +113,7 @@ fun OrdersScreen(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(3.dp, RoundedCornerShape(20.dp)),
+                    .shadow(if (colors.isDark) 0.dp else 4.dp, RoundedCornerShape(20.dp)),
                 shape = RoundedCornerShape(20.dp),
                 color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
                 border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder)
@@ -323,15 +323,15 @@ fun PremiumOrderCard(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .shadow(3.dp, RoundedCornerShape(20.dp))
+            .shadow(if (colors.isDark) 0.dp else 4.dp, RoundedCornerShape(22.dp))
             .border(
                 width = if (order.isFromCustomer) 1.5.dp else 1.dp,
                 color = if (order.isFromCustomer) colors.profitGreen.copy(alpha = 0.55f) else if (colors.isDark) colors.glassBorder else colors.cardBorder,
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(22.dp)
             )
             .bounceClick(onClick = onClick)
             .testTag("order_card_${order.id}"),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -455,11 +455,11 @@ fun PremiumOrderCard(
 
             Surface(
                 color = colors.secondarySurface,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(16.dp),
                 border = BorderStroke(1.dp, colors.cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.padding(11.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Restaurant, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(17.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
@@ -555,7 +555,7 @@ fun PremiumOrderCard(
                         color = colors.secondarySurface,
                         shape = RoundedCornerShape(50),
                         border = BorderStroke(1.dp, colors.cardBorder),
-                        modifier = Modifier.defaultMinSize(minHeight = 40.dp)
+                        modifier = Modifier.defaultMinSize(minHeight = 40.dp).bounceClick()
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
