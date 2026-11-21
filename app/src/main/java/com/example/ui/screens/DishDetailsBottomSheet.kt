@@ -86,7 +86,7 @@ fun DishDetailsBottomSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var quantity by remember(menuItem.id) { mutableDoubleStateOf(1.0) }
     val favScale by animateFloatAsState(
-        targetValue = if (isFavorite) 1.16f else 1f,
+        targetValue = if (isFavorite) 1.18f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium
@@ -114,7 +114,7 @@ fun DishDetailsBottomSheet(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(240.dp)
+                    .height(248.dp)
             ) {
                 DishPhotoCarousel(
                     photos = photos,
@@ -134,7 +134,7 @@ fun DishDetailsBottomSheet(
                         .clip(RoundedCornerShape(24.dp))
                         .background(
                             Brush.verticalGradient(
-                                listOf(Color.Transparent, Color.Transparent, Color.Black.copy(alpha = 0.25f))
+                                listOf(Color.Transparent, Color.Transparent, Color.Black.copy(alpha = 0.28f))
                             )
                         )
                 )
@@ -151,10 +151,10 @@ fun DishDetailsBottomSheet(
                         Surface(
                             color = colors.goldAccent,
                             shape = RoundedCornerShape(50),
-                            shadowElevation = 4.dp
+                            shadowElevation = 6.dp
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(Icons.Default.LocalFireDepartment, contentDescription = null, tint = Color(0xFF1A1614), modifier = Modifier.size(14.dp))
@@ -202,7 +202,7 @@ fun DishDetailsBottomSheet(
                         Surface(
                             color = colors.primaryContainer,
                             shape = RoundedCornerShape(50),
-                            modifier = Modifier.padding(bottom = 4.dp)
+                            modifier = Modifier.padding(bottom = 5.dp)
                         ) {
                             Text(
                                 text = categoryName,
@@ -300,7 +300,7 @@ fun DishDetailsBottomSheet(
 
             Surface(
                 color = colors.secondarySurface,
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(20.dp),
                 border = BorderStroke(1.dp, colors.cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -336,27 +336,35 @@ fun DishDetailsBottomSheet(
                         onDismiss()
                     },
                     shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand),
-                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    contentPadding = PaddingValues(),
                     modifier = Modifier
                         .weight(1f)
                         .defaultMinSize(minHeight = 52.dp)
-                        .shadow(8.dp, RoundedCornerShape(50), spotColor = colors.primaryBrand.copy(alpha = 0.45f))
+                        .shadow(10.dp, RoundedCornerShape(50), spotColor = colors.primaryBrand.copy(alpha = 0.45f))
+                        .clip(RoundedCornerShape(50))
+                        .background(colors.warmAccentGradient)
                         .bounceClick()
                         .testTag("dish_sheet_add_to_cart_btn")
                 ) {
-                    Icon(Icons.Default.ShoppingBag, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    val lineSubtotal = if (menuItem.isVariablePrice && menuItem.publishedPrice <= 0.0) {
-                        ""
-                    } else {
-                        " • ${DateUtils.formatCurrency(quantity * menuItem.publishedPrice)}"
+                    Row(
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(Icons.Default.ShoppingBag, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        val lineSubtotal = if (menuItem.isVariablePrice && menuItem.publishedPrice <= 0.0) {
+                            ""
+                        } else {
+                            " • ${DateUtils.formatCurrency(quantity * menuItem.publishedPrice)}"
+                        }
+                        Text(
+                            text = "أضف للسلة$lineSubtotal",
+                            color = Color.White,
+                            fontWeight = FontWeight.ExtraBold
+                        )
                     }
-                    Text(
-                        text = "أضف للسلة$lineSubtotal",
-                        color = Color.White,
-                        fontWeight = FontWeight.ExtraBold
-                    )
                 }
             }
         }
