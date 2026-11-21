@@ -24,7 +24,7 @@ private val LightBrandColorScheme = lightColorScheme(
     tertiary = MintBasilSuccess,
     onTertiary = Color.White,
     tertiaryContainer = LightBasilContainer,
-    onTertiaryContainer = Color(0xFF116155),
+    onTertiaryContainer = Color(0xFF0F5C43),
     background = AlabasterBg,
     onBackground = EspressoInkText,
     surface = PureCrispWhite,
@@ -40,7 +40,7 @@ private val DarkBrandColorScheme = darkColorScheme(
     primary = SaffronAmberPrimary,
     onPrimary = Color.White,
     primaryContainer = DarkSaffronContainer,
-    onPrimaryContainer = Color(0xFFFFCA99),
+    onPrimaryContainer = Color(0xFFFFCE9E),
     secondary = HoneyGoldHighlight,
     onSecondary = ObsidianBg,
     secondaryContainer = VelvetSecondarySurface,
@@ -70,9 +70,9 @@ object AppTheme {
 }
 
 val AppShapes = Shapes(
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(26.dp)
+    small = RoundedCornerShape(14.dp),
+    medium = RoundedCornerShape(22.dp),
+    large = RoundedCornerShape(28.dp)
 )
 
 @Composable
