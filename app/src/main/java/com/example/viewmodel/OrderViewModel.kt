@@ -224,7 +224,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     val productImages: StateFlow<List<ProductImageEntity>> = businessRepository.allProductImages
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val primaryImagesMap: StateFlow> = combine(
+    val primaryImagesMap = combine(
         productImages,
         products
     ) { imgs, _ ->
@@ -237,7 +237,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    val imagesByProductMap: StateFlow>> = combine(
+    val imagesByProductMap = combine(
         productImages,
         products
     ) { imgs, _ ->
@@ -290,7 +290,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     val allLineItems: StateFlow<List<OrderLineItemEntity>> = orderRepository.allLineItems
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val orderItemsMap: StateFlow>> = combine(
+    val orderItemsMap = combine(
         allLineItems,
         ordersForSelectedMonth
     ) { items, _ ->
