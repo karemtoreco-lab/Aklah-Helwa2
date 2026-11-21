@@ -15,6 +15,7 @@ import com.example.model.Order
 import com.example.model.OrderLineItemEntity
 import com.example.model.ProductEntity
 import com.example.model.ProductImageEntity
+import com.example.model.TreasuryTransactionEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,9 +30,10 @@ import kotlinx.coroutines.launch
         MenuItemEntity::class,
         OrderLineItemEntity::class,
         ExpenseEntity::class,
-        GeneratedMenuEntity::class
+        GeneratedMenuEntity::class,
+        TreasuryTransactionEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -199,6 +201,30 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `orders` ADD COLUMN `deliveryDate` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `orders` ADD COLUMN `paidAmount` REAL NOT NULL DEFAULT 0.0")
+                db.execSQL("ALTER TABLE `order_items` ADD COLUMN `isTotalCostForWholeQty` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `treasury_transactions` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `cloudId` TEXT NOT NULL DEFAULT '',
+                        `type` TEXT NOT NULL,
+                        `amount` REAL NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `notes` TEXT NOT NULL DEFAULT '',
+                        `createdAt` INTEGER NOT NULL,
+                        `yearMonth` TEXT NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_treasury_transactions_yearMonth` ON `treasury_transactions` (`yearMonth`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_treasury_transactions_createdAt` ON `treasury_transactions` (`createdAt`)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -206,7 +232,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "akleh_helwa_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .addCallback(DatabaseCallback())
                     .build()
                 INSTANCE = instance
@@ -237,10 +263,6 @@ abstract class AppDatabase : RoomDatabase() {
             val items: List<InitialProductSeed>
         )
 
-        /**
-         * Seeds ONLY the exact approved products and categories from the uploaded أكلة حلوة menu.
-         * Zero demo orders, customers, expenses, or gallery images are inserted.
-         */
         suspend fun seedInitialCatalogAndMenu(catalogDao: CatalogDao, menuDao: MenuDao) {
             if (catalogDao.getCategoryCount() > 0) return
 
