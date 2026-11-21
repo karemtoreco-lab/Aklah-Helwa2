@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -207,7 +208,6 @@ fun ProductCatalogScreen(
             .background(colors.backgroundGradient),
         contentAlignment = Alignment.TopCenter
     ) {
-        // Unified single LazyColumn so header controls, search, compact horizontal category chips, and cards scroll seamlessly on all devices
         LazyColumn(
             modifier = Modifier
                 .widthIn(max = 840.dp)
@@ -219,9 +219,10 @@ fun ProductCatalogScreen(
         ) {
             item(key = "catalog_segmented_tabs") {
                 Surface(
-                    color = colors.cardSurface,
+                    color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
                     shape = RoundedCornerShape(50),
-                    border = BorderStroke(1.dp, colors.cardBorder),
+                    border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
+                    shadowElevation = if (colors.isDark) 0.dp else 3.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(modifier = Modifier.padding(4.dp)) {
@@ -248,32 +249,41 @@ fun ProductCatalogScreen(
             }
 
             item(key = "catalog_search_bar") {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("ابحث عن صنف...", color = colors.textSecondary) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = colors.primaryBrand) },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Clear, contentDescription = "مسح", tint = colors.textSecondary)
-                            }
-                        }
-                    },
-                    singleLine = true,
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .testTag("catalog_search_input"),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = colors.cardSurface,
-                        unfocusedContainerColor = colors.cardSurface,
-                        focusedBorderColor = colors.primaryBrand,
-                        unfocusedBorderColor = colors.cardBorder,
-                        focusedTextColor = colors.textPrimary,
-                        unfocusedTextColor = colors.textPrimary
+                        .shadow(if (colors.isDark) 0.dp else 3.dp, RoundedCornerShape(20.dp)),
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
+                    border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder)
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("ابحث عن صنف...", color = colors.textSecondary) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = colors.primaryBrand) },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "مسح", tint = colors.textSecondary)
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("catalog_search_input"),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedTextColor = colors.textPrimary,
+                            unfocusedTextColor = colors.textPrimary
+                        )
                     )
-                )
+                }
             }
 
             item(key = "catalog_category_chips_row") {
@@ -315,6 +325,7 @@ fun ProductCatalogScreen(
                             modifier = Modifier
                                 .weight(1.3f)
                                 .defaultMinSize(minHeight = 48.dp)
+                                .shadow(6.dp, RoundedCornerShape(50), spotColor = colors.primaryBrand.copy(alpha = 0.35f))
                                 .bounceClick()
                                 .testTag("add_product_btn"),
                             shape = RoundedCornerShape(50),
@@ -345,21 +356,22 @@ fun ProductCatalogScreen(
                 itemsIndexed(filteredProducts, key = { _, p -> p.id }) { index, prod ->
                     val catName = categoryMap[prod.categoryId]?.name.orEmpty()
                     val imgPath = primaryImages[prod.id]
+                    val unitProfit = (prod.defaultSellingPrice - prod.purchaseCost).coerceAtLeast(0.0)
 
                     StaggeredAppearItem(index = index) {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight()
-                                .shadow(3.dp, RoundedCornerShape(20.dp))
-                                .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
+                                .shadow(if (colors.isDark) 0.dp else 4.dp, RoundedCornerShape(22.dp))
+                                .border(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(22.dp))
                                 .bounceClick {
                                     editingProduct = prod
                                     showProductDialog = true
                                 }
                                 .testTag("product_card_${prod.id}"),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = colors.cardSurface)
+                            shape = RoundedCornerShape(22.dp),
+                            colors = CardDefaults.cardColors(containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface)
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
                                 Row(
@@ -369,8 +381,8 @@ fun ProductCatalogScreen(
                                     ProductThumbnail(
                                         imagePath = imgPath,
                                         contentDescription = prod.name,
-                                        size = 62.dp,
-                                        cornerRadius = 16.dp,
+                                        size = 64.dp,
+                                        cornerRadius = 18.dp,
                                         modifier = Modifier.clickable {
                                             pickerTargetProductId = prod.id
                                             photoPickerLauncher.launch(
@@ -425,6 +437,26 @@ fun ProductCatalogScreen(
                                                     modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
                                                 )
                                             }
+                                            if (prod.defaultSellingPrice > 0.0 && unitProfit > 0.0) {
+                                                Surface(
+                                                    color = colors.profitContainer,
+                                                    shape = RoundedCornerShape(50)
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Icon(Icons.Default.TrendingUp, contentDescription = null, tint = colors.profitGreen, modifier = Modifier.size(11.dp))
+                                                        Spacer(modifier = Modifier.width(3.dp))
+                                                        Text(
+                                                            text = "+${DateUtils.formatCurrency(unitProfit)}",
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = colors.onProfitContainer
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                     Switch(
@@ -477,9 +509,9 @@ fun ProductCatalogScreen(
                 item(key = "gallery_summary") {
                     val totalImagesCount = imagesByProduct.values.sumOf { it.size }
                     Surface(
-                        color = colors.cardSurface,
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, colors.cardBorder),
+                        color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
+                        shape = RoundedCornerShape(18.dp),
+                        border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
@@ -503,10 +535,10 @@ fun ProductCatalogScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
+                                .border(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(22.dp))
                                 .testTag("gallery_product_${prod.id}"),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = colors.cardSurface)
+                            shape = RoundedCornerShape(22.dp),
+                            colors = CardDefaults.cardColors(containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface)
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
                                 Row(
@@ -543,12 +575,12 @@ fun ProductCatalogScreen(
                                         items(imgs, key = { it.id }) { img ->
                                             Box(
                                                 modifier = Modifier
-                                                    .size(112.dp)
-                                                    .clip(RoundedCornerShape(16.dp))
+                                                    .size(114.dp)
+                                                    .clip(RoundedCornerShape(18.dp))
                                                     .border(
                                                         width = if (img.isPrimary) 2.dp else 1.dp,
                                                         color = if (img.isPrimary) colors.profitGreen else colors.cardBorder,
-                                                        shape = RoundedCornerShape(16.dp)
+                                                        shape = RoundedCornerShape(18.dp)
                                                     )
                                             ) {
                                                 SmartDishImage(
