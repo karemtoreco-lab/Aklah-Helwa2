@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -89,11 +91,11 @@ fun ProductPickerDialog(
                 .padding(14.dp)
                 .widthIn(max = 600.dp)
                 .fillMaxWidth()
-                .heightIn(max = 650.dp)
+                .heightIn(max = 660.dp)
                 .imePadding()
-                .shadow(16.dp, RoundedCornerShape(26.dp))
-                .clip(RoundedCornerShape(26.dp))
-                .border(1.dp, colors.cardBorder, RoundedCornerShape(26.dp))
+                .shadow(18.dp, RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(28.dp))
+                .border(1.2.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(28.dp))
                 .testTag("product_picker_dialog"),
             color = colors.cardSurface
         ) {
@@ -103,13 +105,24 @@ fun ProductPickerDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "اختر من الأصناف لإضافته للأوردر",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = colors.textPrimary,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(colors.warmAccentGradient),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.RestaurantMenu, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "اختر من الأصناف لإضافته للأوردر",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = colors.textPrimary
+                        )
+                    }
                     Box(
                         modifier = Modifier
                             .size(38.dp)
@@ -196,7 +209,7 @@ fun ProductPickerDialog(
                                     ProductThumbnail(
                                         imagePath = imagePath,
                                         contentDescription = product.name,
-                                        size = 54.dp,
+                                        size = 56.dp,
                                         cornerRadius = 16.dp,
                                         modifier = Modifier.clickable { onSelectProduct(product, imagePath) }
                                     )
