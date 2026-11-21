@@ -99,7 +99,7 @@ fun MenuCategoryEditorDialog(
                 onValueChange = { name = it },
                 label = { Text("اسم القسم في المنيو") },
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("menu_category_name_input"),
@@ -172,10 +172,9 @@ fun MenuItemEditorDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Multi-photo gallery (up to 3 compressed Base64 Data URIs synced to Firestore)
                 Surface(
                     color = colors.secondarySurface,
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(18.dp),
                     border = BorderStroke(1.dp, colors.cardBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -210,8 +209,8 @@ fun MenuItemEditorDialog(
                                     Box(
                                         modifier = Modifier
                                             .size(86.dp)
-                                            .clip(RoundedCornerShape(14.dp))
-                                            .border(1.dp, colors.goldAccent.copy(alpha = 0.55f), RoundedCornerShape(14.dp))
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .border(1.dp, colors.goldAccent.copy(alpha = 0.55f), RoundedCornerShape(16.dp))
                                     ) {
                                         SmartDishImage(
                                             imageSource = imgSrc,
@@ -271,7 +270,7 @@ fun MenuItemEditorDialog(
                     onValueChange = { displayName = it },
                     label = { Text("اسم الصنف في المنيو") },
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = colors.secondarySurface,
@@ -290,7 +289,7 @@ fun MenuItemEditorDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     enabled = !isVariablePrice,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("menu_item_price_input"),
@@ -339,7 +338,7 @@ fun MenuItemEditorDialog(
                     onValueChange = { unitLabel = it },
                     label = { Text("الوحدة") },
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = colors.secondarySurface,
@@ -355,7 +354,7 @@ fun MenuItemEditorDialog(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("وصف إضافي بالمنيو (اختياري)") },
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = colors.secondarySurface,
@@ -485,7 +484,7 @@ fun AddCatalogProductToMenuDialog(
                     onValueChange = { search = it },
                     placeholder = { Text("ابحث بالاسم...", color = colors.textSecondary) },
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = colors.secondarySurface,
@@ -525,7 +524,7 @@ fun AddCatalogProductToMenuDialog(
                                 ProductThumbnail(
                                     imagePath = primaryImages[prod.id],
                                     contentDescription = prod.name,
-                                    size = 40.dp,
+                                    size = 42.dp,
                                     cornerRadius = 12.dp
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
@@ -610,7 +609,7 @@ fun AddManualMenuItemDialog(
                     onValueChange = { name = it },
                     label = { Text("اسم الصنف *") },
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = colors.secondarySurface,
@@ -626,7 +625,7 @@ fun AddManualMenuItemDialog(
                     onValueChange = { unit = it },
                     label = { Text("الوحدة") },
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = colors.secondarySurface,
@@ -644,7 +643,7 @@ fun AddManualMenuItemDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     enabled = !isVariable,
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = colors.secondarySurface,
@@ -659,7 +658,7 @@ fun AddManualMenuItemDialog(
                     value = desc,
                     onValueChange = { desc = it },
                     label = { Text("وصف (اختياري)") },
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = colors.secondarySurface,
