@@ -132,7 +132,8 @@ data class OrderLineItemEntity(
     val unitSellingPrice: Double = 0.0,
     val totalPurchaseCost: Double = 0.0,
     val totalSellingPrice: Double = 0.0,
-    val itemGrossProfit: Double = 0.0
+    val itemGrossProfit: Double = 0.0,
+    val isTotalCostForWholeQty: Boolean = false
 )
 
 @Entity(
@@ -162,4 +163,29 @@ data class GeneratedMenuEntity(
     val pageIndex: Int = 1,
     val totalPages: Int = 1,
     val createdAt: Long = System.currentTimeMillis()
+)
+
+enum class TreasuryTxType(val titleAr: String, val isIncome: Boolean) {
+    HOME_LOAN_IN("سُلفة من فلوس البيت (+)", true),
+    HOME_LOAN_REPAY("رد سُلفة لفلوس البيت (-)", false),
+    CAPITAL_INJECTION("إضافة رأس مال للشغل (+)", true),
+    MATERIALS_PURCHASE("شراء خامات لأوردر (-)", false),
+    PROFIT_WITHDRAWAL("سحب أرباح شخصية (-)", false),
+    ORDER_REVENUE_IN("تحصيل أوردر (+)", true)
+}
+
+@Entity(
+    tableName = "treasury_transactions",
+    indices = [Index(value = ["yearMonth"]), Index(value = ["createdAt"])]
+)
+data class TreasuryTransactionEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val cloudId: String = "",
+    val type: String = TreasuryTxType.HOME_LOAN_IN.name,
+    val amount: Double,
+    val title: String,
+    val notes: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val yearMonth: String
 )
