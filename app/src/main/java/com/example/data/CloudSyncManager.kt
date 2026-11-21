@@ -17,6 +17,9 @@ import com.example.model.OrderStatus
 import com.example.model.PaymentStatus
 import com.example.model.TrackedCloudOrder
 import com.example.model.TrackedOrderLineItem
+import com.example.model.TreasuryTransactionEntity
+import com.example.model.TreasuryTxType
+import com.example.service.OrderNotificationService
 import com.example.util.Base64ImageUtils
 import com.example.util.DateUtils
 import com.google.firebase.FirebaseApp
@@ -74,6 +77,7 @@ class CloudSyncManager(
     private var firestore: FirebaseFirestore? = null
     private var activeConfig: CloudConfig? = null
     private var activeTrackedUserId: String = ""
+    private var lastOfferTimestampSeen: Long = -1L
 
     private var menuCatsListener: ListenerRegistration? = null
     private var menuItemsListener: ListenerRegistration? = null
@@ -82,6 +86,7 @@ class CloudSyncManager(
     private var ordersListener: ListenerRegistration? = null
     private var usersListener: ListenerRegistration? = null
     private var userOrdersListener: ListenerRegistration? = null
+    private var treasuryListener: ListenerRegistration? = null
 
     fun configureAndStart(
         config: CloudConfig,
@@ -100,6 +105,9 @@ class CloudSyncManager(
             }
             if (enableAdminListeners && usersListener == null) {
                 attachAppUsersListener(db)
+            }
+            if (enableAdminListeners && treasuryListener == null) {
+                attachTreasuryListener(db)
             }
             if (currentUserId.isNotBlank() && currentUserId != activeTrackedUserId) {
                 attachCustomerOrdersListener(db, currentUserId)
@@ -121,6 +129,7 @@ class CloudSyncManager(
             if (enableAdminListeners) {
                 attachAdminOrdersListener(db)
                 attachAppUsersListener(db)
+                attachTreasuryListener(db)
             }
             if (currentUserId.isNotBlank()) {
                 attachCustomerOrdersListener(db, currentUserId)
@@ -164,6 +173,7 @@ class CloudSyncManager(
         ordersListener?.remove(); ordersListener = null
         usersListener?.remove(); usersListener = null
         userOrdersListener?.remove(); userOrdersListener = null
+        treasuryListener?.remove(); treasuryListener = null
     }
 
     private fun attachMenuListeners(db: FirebaseFirestore) {
@@ -199,7 +209,6 @@ class CloudSyncManager(
                 if (snapshot != null && !snapshot.isEmpty) {
                     val items = snapshot.documents.mapNotNull { doc ->
                         val id = doc.getLong("id") ?: doc.id.toLongOrNull() ?: return@mapNotNull null
-                        @Suppress("UNCHECKED_CAST")
                         val rawPhotos = (doc.get("photos") as? List<*>)
                             ?.mapNotNull { it as? String }
                             ?.filter { it.isNotBlank() && !it.startsWith("content://", ignoreCase = true) }
@@ -241,7 +250,15 @@ class CloudSyncManager(
                     _cloudKitchenOpen.value = snapshot.getBoolean("kitchenOpen") ?: true
                 }
                 if (snapshot.contains("dailyOfferText")) {
-                    _cloudDailyOffer.value = snapshot.getString("dailyOfferText").orEmpty()
+                    val offer = snapshot.getString("dailyOfferText").orEmpty()
+                    val offerStamp = snapshot.getLong("dailyOfferUpdatedAt") ?: 0L
+                    _cloudDailyOffer.value = offer
+                    if (lastOfferTimestampSeen == -1L) {
+                        lastOfferTimestampSeen = offerStamp
+                    } else if (offer.isNotBlank() && offerStamp > lastOfferTimestampSeen) {
+                        lastOfferTimestampSeen = offerStamp
+                        OrderNotificationService.showOfferBroadcastNotification(context, offer)
+                    }
                 }
                 val zonesJson = snapshot.getString("deliveryZonesJson")
                 if (!zonesJson.isNullOrBlank()) {
@@ -305,7 +322,6 @@ class CloudSyncManager(
                 if (error != null || snapshot == null) return@addSnapshotListener
                 val tracked = snapshot.documents.mapNotNull { doc ->
                     val cid = doc.getString("cloudId") ?: doc.id
-                    @Suppress("UNCHECKED_CAST")
                     val rawItems = (doc.get("lineItems") as? List<*>)?.mapNotNull { it as? Map<*, *> } ?: emptyList()
                     val items = rawItems.map { map ->
                         TrackedOrderLineItem(
@@ -356,15 +372,6 @@ class CloudSyncManager(
                     for (doc in snapshot.documents) {
                         val cloudId = doc.getString("cloudId") ?: doc.id
                         val existing = orderRepository.getOrderByCloudId(cloudId)
-                        val remoteStatus = doc.getString("status") ?: OrderStatus.PENDING_REVIEW.name
-                        val remoteRated = doc.getBoolean("isRated") ?: false
-
-                        if (existing != null) {
-                            if (existing.isRated != remoteRated) {
-                                orderRepository.updateOrder(existing.copy(isRated = remoteRated))
-                            }
-                            continue
-                        }
 
                         val customerName = doc.getString("customerName") ?: continue
                         val customerPhone = doc.getString("customerPhone") ?: ""
@@ -374,21 +381,28 @@ class CloudSyncManager(
                         val userId = doc.getString("userId") ?: ""
                         val notes = doc.getString("notes") ?: ""
                         val summary = doc.getString("itemsDescription") ?: ""
-                        val salePrice = doc.getDouble("salePrice") ?: 0.0
+                        val remoteStatus = doc.getString("status") ?: OrderStatus.PENDING_REVIEW.name
+                        val remotePayment = doc.getString("paymentStatus") ?: PaymentStatus.UNPAID.name
+                        val remotePaidAmount = doc.getDouble("paidAmount") ?: 0.0
+                        val remoteSource = doc.getString("orderSource") ?: OrderSource.CUSTOMER.name
+                        val remoteRated = doc.getBoolean("isRated") ?: false
                         val orderDate = doc.getLong("orderDate") ?: System.currentTimeMillis()
+                        val deliveryDate = doc.getLong("deliveryDate") ?: 0L
                         val ym = doc.getString("yearMonth") ?: DateUtils.getYearMonthFromTimestamp(orderDate)
 
-                        @Suppress("UNCHECKED_CAST")
                         val rawItems = (doc.get("lineItems") as? List<*>)?.mapNotNull { it as? Map<*, *> } ?: emptyList()
                         val lineEntities = rawItems.map { map ->
                             val productId = (map["productId"] as? Number)?.toLong()
                             val qty = (map["quantity"] as? Number)?.toDouble() ?: 1.0
                             val unitSell = (map["unitSellingPrice"] as? Number)?.toDouble() ?: 0.0
-                            val unitPurchase = productId?.let { prodMap[it]?.purchaseCost } ?: 0.0
+                            val isWholeQtyCost = (map["isTotalCostForWholeQty"] as? Boolean) ?: false
+                            val explicitUnitPurchase = (map["unitPurchaseCost"] as? Number)?.toDouble()
+                            val unitPurchase = explicitUnitPurchase ?: (productId?.let { prodMap[it]?.purchaseCost } ?: 0.0)
                             val totalSell = (map["totalSellingPrice"] as? Number)?.toDouble() ?: (qty * unitSell)
-                            val totalCost = qty * unitPurchase
+                            val explicitTotalCost = (map["totalPurchaseCost"] as? Number)?.toDouble()
+                            val totalCost = explicitTotalCost ?: if (isWholeQtyCost) unitPurchase else (qty * unitPurchase)
                             OrderLineItemEntity(
-                                orderId = 0L,
+                                orderId = existing?.id ?: 0L,
                                 productId = productId,
                                 productNameSnapshot = (map["productName"] as? String).orEmpty(),
                                 productImagePathSnapshot = null,
@@ -397,12 +411,49 @@ class CloudSyncManager(
                                 unitSellingPrice = unitSell,
                                 totalPurchaseCost = totalCost,
                                 totalSellingPrice = totalSell,
-                                itemGrossProfit = totalSell - totalCost
+                                itemGrossProfit = totalSell - totalCost,
+                                isTotalCostForWholeQty = isWholeQtyCost
                             )
                         }
 
-                        val totalCost = lineEntities.sumOf { it.totalPurchaseCost }
-                        val itemsRevenue = (salePrice - shippingFee).coerceAtLeast(0.0)
+                        val totalCost = doc.getDouble("costPrice") ?: lineEntities.sumOf { it.totalPurchaseCost }
+                        val rawSalePrice = doc.getDouble("salePrice") ?: 0.0
+                        val itemsRevenue = if (doc.contains("itemsSalePrice")) {
+                            doc.getDouble("itemsSalePrice") ?: 0.0
+                        } else {
+                            (rawSalePrice - shippingFee).coerceAtLeast(0.0)
+                        }
+
+                        if (existing != null) {
+                            val updatedLocal = existing.copy(
+                                customerName = customerName,
+                                customerPhone = customerPhone,
+                                itemsDescription = summary.ifBlank { existing.itemsDescription },
+                                salePrice = itemsRevenue,
+                                costPrice = totalCost,
+                                netProfit = itemsRevenue - totalCost,
+                                orderDate = orderDate,
+                                deliveryDate = deliveryDate,
+                                yearMonth = ym,
+                                status = remoteStatus,
+                                paymentStatus = remotePayment,
+                                paidAmount = remotePaidAmount,
+                                notes = notes,
+                                deliveryAddress = deliveryAddress,
+                                deliveryZone = deliveryZone,
+                                shippingFee = shippingFee,
+                                isRated = remoteRated
+                            )
+                            if (updatedLocal != existing) {
+                                if (lineEntities.isNotEmpty()) {
+                                    orderRepository.saveOrderWithItems(updatedLocal, lineEntities)
+                                } else {
+                                    orderRepository.updateOrder(updatedLocal)
+                                }
+                            }
+                            continue
+                        }
+
                         val newOrder = Order(
                             customerName = customerName,
                             customerPhone = customerPhone,
@@ -411,12 +462,14 @@ class CloudSyncManager(
                             costPrice = totalCost,
                             netProfit = itemsRevenue - totalCost,
                             orderDate = orderDate,
+                            deliveryDate = deliveryDate,
                             yearMonth = ym,
                             status = remoteStatus,
-                            paymentStatus = PaymentStatus.UNPAID.name,
+                            paymentStatus = remotePayment,
+                            paidAmount = remotePaidAmount,
                             notes = notes,
                             deliveryAddress = deliveryAddress,
-                            orderSource = OrderSource.CUSTOMER.name,
+                            orderSource = remoteSource,
                             cloudId = cloudId,
                             userId = userId,
                             deliveryZone = deliveryZone,
@@ -427,6 +480,92 @@ class CloudSyncManager(
                     }
                 }
             }
+    }
+
+    private fun attachTreasuryListener(db: FirebaseFirestore) {
+        treasuryListener?.remove()
+        treasuryListener = db.collection(COL_TREASURY)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) return@addSnapshotListener
+                scope.launch(Dispatchers.IO) {
+                    for (change in snapshot.documentChanges) {
+                        if (change.type == DocumentChange.Type.REMOVED) {
+                            val removedId = change.document.getString("cloudId") ?: change.document.id
+                            orderRepository.getTreasuryTxByCloudId(removedId)?.let {
+                                orderRepository.deleteTreasuryTransaction(it)
+                            }
+                        }
+                    }
+                    for (doc in snapshot.documents) {
+                        val cid = doc.getString("cloudId") ?: doc.id
+                        if (orderRepository.getTreasuryTxByCloudId(cid) != null) continue
+                        val amount = doc.getDouble("amount") ?: continue
+                        val title = doc.getString("title") ?: continue
+                        val type = doc.getString("type") ?: TreasuryTxType.HOME_LOAN_IN.name
+                        val notes = doc.getString("notes").orEmpty()
+                        val createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
+                        val ym = doc.getString("yearMonth") ?: DateUtils.getYearMonthFromTimestamp(createdAt)
+                        orderRepository.insertTreasuryTransaction(
+                            TreasuryTransactionEntity(
+                                cloudId = cid,
+                                type = type,
+                                amount = amount,
+                                title = title,
+                                notes = notes,
+                                createdAt = createdAt,
+                                yearMonth = ym
+                            )
+                        )
+                    }
+                }
+            }
+    }
+
+    suspend fun pushTreasuryTransactionToCloud(tx: TreasuryTransactionEntity): Result<Unit> {
+        val db = firestore ?: return Result.success(Unit)
+        if (tx.cloudId.isBlank()) return Result.success(Unit)
+        return try {
+            db.collection(COL_TREASURY)
+                .document(tx.cloudId)
+                .set(
+                    mapOf(
+                        "cloudId" to tx.cloudId,
+                        "type" to tx.type,
+                        "amount" to tx.amount,
+                        "title" to tx.title,
+                        "notes" to tx.notes,
+                        "createdAt" to tx.createdAt,
+                        "yearMonth" to tx.yearMonth
+                    ),
+                    SetOptions.merge()
+                )
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteTreasuryTransactionFromCloud(cloudId: String): Result<Unit> {
+        val db = firestore ?: return Result.success(Unit)
+        if (cloudId.isBlank()) return Result.success(Unit)
+        return try {
+            db.collection(COL_TREASURY).document(cloudId).delete().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteAppUserFromCloud(userId: String): Result<Unit> {
+        val db = firestore ?: return Result.failure(IllegalStateException("غير متصل بالسحابة"))
+        if (userId.isBlank()) return Result.success(Unit)
+        return try {
+            db.collection(COL_APP_USERS).document(userId).delete().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun upsertUserProfile(profile: CustomerProfile): Result<Unit> {
@@ -532,15 +671,17 @@ class CloudSyncManager(
     suspend fun publishDailyOfferToCloud(offerText: String): Result<Unit> {
         val db = firestore ?: return Result.success(Unit)
         return try {
+            val now = System.currentTimeMillis()
+            val payload = mutableMapOf<String, Any>(
+                "dailyOfferText" to offerText.trim(),
+                "updatedAt" to now
+            )
+            if (offerText.trim().isNotBlank()) {
+                payload["dailyOfferUpdatedAt"] = now
+            }
             db.collection(COL_STORE_SETTINGS)
                 .document(DOC_STORE_PROFILE)
-                .set(
-                    mapOf(
-                        "dailyOfferText" to offerText.trim(),
-                        "updatedAt" to System.currentTimeMillis()
-                    ),
-                    SetOptions.merge()
-                )
+                .set(payload, SetOptions.merge())
                 .await()
             Result.success(Unit)
         } catch (e: Exception) {
@@ -626,6 +767,59 @@ class CloudSyncManager(
         }
     }
 
+    suspend fun pushAdminOrderToCloud(
+        order: Order,
+        lineItems: List<OrderLineItemEntity>
+    ): Result<Unit> {
+        val db = firestore ?: return Result.success(Unit)
+        val docId = order.cloudId.ifBlank { return Result.success(Unit) }
+        return try {
+            val payload = hashMapOf<String, Any>(
+                "cloudId" to docId,
+                "userId" to order.userId,
+                "customerName" to order.customerName,
+                "customerPhone" to order.customerPhone,
+                "deliveryZone" to order.deliveryZone,
+                "shippingFee" to order.shippingFee,
+                "deliveryAddress" to order.deliveryAddress,
+                "notes" to order.notes,
+                "itemsDescription" to order.itemsDescription,
+                "itemsSalePrice" to order.salePrice,
+                "salePrice" to (order.salePrice + order.shippingFee),
+                "costPrice" to order.costPrice,
+                "orderDate" to order.orderDate,
+                "deliveryDate" to order.deliveryDate,
+                "yearMonth" to order.yearMonth,
+                "status" to order.status,
+                "statusLabel" to OrderStatus.trackingTitle(order.status),
+                "paymentStatus" to order.paymentStatus,
+                "paidAmount" to order.paidAmount,
+                "orderSource" to order.orderSource,
+                "isRated" to order.isRated,
+                "updatedAt" to System.currentTimeMillis(),
+                "lineItems" to lineItems.map { li ->
+                    mapOf(
+                        "productId" to li.productId,
+                        "productName" to li.productNameSnapshot,
+                        "quantity" to li.quantity,
+                        "unitPurchaseCost" to li.unitPurchaseCost,
+                        "unitSellingPrice" to li.unitSellingPrice,
+                        "totalPurchaseCost" to li.totalPurchaseCost,
+                        "totalSellingPrice" to li.totalSellingPrice,
+                        "isTotalCostForWholeQty" to li.isTotalCostForWholeQty
+                    )
+                }
+            )
+            db.collection(COL_ORDERS)
+                .document(docId)
+                .set(payload, SetOptions.merge())
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun pushCustomerOrderToCloud(
         cloudId: String,
         userId: String,
@@ -656,11 +850,15 @@ class CloudSyncManager(
                 "deliveryAddress" to deliveryAddress,
                 "notes" to notes,
                 "itemsDescription" to summaryDesc,
+                "itemsSalePrice" to totalSalePrice,
                 "salePrice" to (totalSalePrice + shippingFee),
                 "orderDate" to orderDate,
+                "deliveryDate" to 0L,
                 "yearMonth" to yearMonth,
                 "status" to OrderStatus.PENDING_REVIEW.name,
                 "statusLabel" to OrderStatus.trackingTitle(OrderStatus.PENDING_REVIEW.name),
+                "paymentStatus" to PaymentStatus.UNPAID.name,
+                "paidAmount" to 0.0,
                 "orderSource" to OrderSource.CUSTOMER.name,
                 "isRated" to false,
                 "lineItems" to cartItems.map { ci ->
@@ -694,6 +892,27 @@ class CloudSyncManager(
                     mapOf(
                         "status" to newStatus,
                         "statusLabel" to OrderStatus.trackingTitle(newStatus),
+                        "updatedAt" to System.currentTimeMillis()
+                    ),
+                    SetOptions.merge()
+                )
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateOrderPaymentInCloud(cloudId: String, paymentStatus: String, paidAmount: Double): Result<Unit> {
+        if (cloudId.isBlank()) return Result.success(Unit)
+        val db = firestore ?: return Result.success(Unit)
+        return try {
+            db.collection(COL_ORDERS)
+                .document(cloudId)
+                .set(
+                    mapOf(
+                        "paymentStatus" to paymentStatus,
+                        "paidAmount" to paidAmount,
                         "updatedAt" to System.currentTimeMillis()
                     ),
                     SetOptions.merge()
@@ -805,6 +1024,7 @@ class CloudSyncManager(
         const val COL_MENU_ITEMS = "menu_items"
         const val COL_ORDERS = "orders"
         const val COL_APP_USERS = "app_users"
+        const val COL_TREASURY = "treasury_transactions"
         const val COL_STORE_SETTINGS = "store_settings"
         const val DOC_STORE_PROFILE = "profile"
         const val COL_APP_CONFIG = "app_config"
