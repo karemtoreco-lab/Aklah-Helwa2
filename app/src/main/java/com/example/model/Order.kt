@@ -48,8 +48,8 @@ enum class OrderStatus(val titleAr: String) {
 }
 
 enum class PaymentStatus(val titleAr: String) {
-    PAID("مدفوع"),
-    PARTIAL("مدفوع جزئياً"),
+    PAID("مدفوع بالكامل"),
+    PARTIAL("عربون / مدفوع جزئياً"),
     UNPAID("آجل / غير مدفوع")
 }
 
@@ -72,9 +72,11 @@ data class Order(
     val costPrice: Double,
     val netProfit: Double = salePrice - costPrice,
     val orderDate: Long = System.currentTimeMillis(),
-    val yearMonth: String, // Format: YYYY-MM e.g. "2026-11"
+    val deliveryDate: Long = 0L,
+    val yearMonth: String,
     val status: String = OrderStatus.DELIVERED.name,
     val paymentStatus: String = PaymentStatus.PAID.name,
+    val paidAmount: Double = 0.0,
     val notes: String = "",
     val deliveryAddress: String = "",
     val orderSource: String = OrderSource.ADMIN.name,
@@ -85,4 +87,13 @@ data class Order(
     val isRated: Boolean = false
 ) {
     val isFromCustomer: Boolean get() = orderSource == OrderSource.CUSTOMER.name
+    val totalWithShipping: Double get() = salePrice + shippingFee
+    val effectivePaidAmount: Double
+        get() = when (paymentStatus) {
+            PaymentStatus.PAID.name -> totalWithShipping
+            PaymentStatus.PARTIAL.name -> paidAmount.coerceIn(0.0, totalWithShipping)
+            else -> 0.0
+        }
+    val remainingAmount: Double
+        get() = (totalWithShipping - effectivePaidAmount).coerceAtLeast(0.0)
 }
