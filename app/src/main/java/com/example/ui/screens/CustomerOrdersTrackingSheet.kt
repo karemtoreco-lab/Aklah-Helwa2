@@ -18,10 +18,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.ReceiptLong
@@ -48,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.OrderStatus
 import com.example.model.TrackedCloudOrder
+import com.example.ui.components.StaggeredAppearItem
 import com.example.ui.components.bounceClick
 import com.example.ui.theme.AppTheme
 import com.example.util.DateUtils
@@ -90,16 +93,17 @@ fun CustomerOrdersTrackingSheet(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(44.dp)
+                        .shadow(6.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.35f))
                         .clip(CircleShape)
                         .background(colors.warmAccentGradient),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = Color.White, modifier = Modifier.size(21.dp))
                 }
                 Column {
                     Text(
@@ -119,7 +123,7 @@ fun CustomerOrdersTrackingSheet(
             if (orders.isEmpty()) {
                 Surface(
                     color = colors.secondarySurface,
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(22.dp),
                     border = BorderStroke(1.dp, colors.cardBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -129,7 +133,14 @@ fun CustomerOrdersTrackingSheet(
                             .padding(28.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(Icons.Default.LocalShipping, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(40.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .background(colors.primaryContainer, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.LocalShipping, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(28.dp))
+                        }
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
                             text = "لا توجد طلبات مسجلة لحسابك حتى الآن",
@@ -151,19 +162,21 @@ fun CustomerOrdersTrackingSheet(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 520.dp),
+                        .heightIn(max = 540.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 8.dp)
                 ) {
-                    items(orders, key = { it.cloudId }) { order ->
-                        TrackedOrderCard(
-                            order = order,
-                            onSubmitRating = { stars -> onSubmitRating(order, stars) },
-                            onReorder = {
-                                onReorder(order)
-                                onDismiss()
-                            }
-                        )
+                    itemsIndexed(orders, key = { _, o -> o.cloudId }) { idx, order ->
+                        StaggeredAppearItem(index = idx) {
+                            TrackedOrderCard(
+                                order = order,
+                                onSubmitRating = { stars -> onSubmitRating(order, stars) },
+                                onReorder = {
+                                    onReorder(order)
+                                    onDismiss()
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -207,7 +220,11 @@ private fun TrackedOrderCard(
                 )
                 Surface(
                     color = if (isCancelled) colors.primaryContainer else if (isDelivered) colors.profitContainer else colors.secondaryContainer,
-                    shape = RoundedCornerShape(50)
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(
+                        1.dp,
+                        (if (isCancelled) colors.primaryBrand else if (isDelivered) colors.profitGreen else colors.goldAccent).copy(alpha = 0.4f)
+                    )
                 ) {
                     Text(
                         text = OrderStatus.trackingTitle(order.status),
@@ -259,7 +276,7 @@ private fun TrackedOrderCard(
                         shape = RoundedCornerShape(50),
                         border = BorderStroke(1.dp, colors.primaryBrand.copy(alpha = 0.5f)),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        modifier = Modifier.defaultMinSize(minHeight = 40.dp)
+                        modifier = Modifier.defaultMinSize(minHeight = 40.dp).bounceClick()
                     ) {
                         Icon(Icons.Default.Replay, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
@@ -327,26 +344,66 @@ private fun OrderPipelineSteps(currentStep: Int) {
     val colors = AppTheme.colors
     val steps = listOf("قيد المراجعة", "جاري التجهيز", "خرج للتوصيل", "تم التسليم")
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         steps.forEachIndexed { idx, label ->
             val reached = idx <= currentStep
+            val isCurrent = idx == currentStep
             Column(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(5.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(
-                            if (reached) colors.profitGreen else colors.cardBorder
-                        )
-                )
-                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(3.dp)
+                            .background(
+                                if (idx == 0) Color.Transparent
+                                else if (reached) colors.profitGreen
+                                else colors.cardBorder
+                            )
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(if (isCurrent) 20.dp else 16.dp)
+                            .clip(CircleShape)
+                            .background(if (reached) colors.profitGreen else colors.cardSurface)
+                            .border(
+                                width = 1.5.dp,
+                                color = if (reached) colors.profitGreen else colors.cardBorder,
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (reached) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(11.dp)
+                            )
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(3.dp)
+                            .background(
+                                if (idx == steps.lastIndex) Color.Transparent
+                                else if (idx < currentStep) colors.profitGreen
+                                else colors.cardBorder
+                            )
+                    )
+                }
+                Spacer(modifier = Modifier.height(5.dp))
                 Text(
                     text = label,
                     fontSize = 9.sp,
