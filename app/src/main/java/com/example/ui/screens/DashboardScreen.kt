@@ -432,7 +432,33 @@ fun DashboardScreen(
                             )
                         }
                     }
-                }
+               Spacer(modifier = Modifier.height(14.dp))
+                    val netFinalProfit = stats.grossProfitBeforeExpenses - stats.totalExpenses
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.24f),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, Color(0xFFFFE599).copy(alpha = 0.35f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "صافي الربح النهائي (بعد المصاريف):",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White.copy(alpha = 0.9f)
+                            )
+                            Text(
+                                text = DateUtils.formatCurrency(netFinalProfit),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = if (netFinalProfit >= 0) Color(0xFF86EFAC) else Color(0xFFFCA5A5)
+                            )
+                        }
+                    }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
