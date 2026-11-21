@@ -127,62 +127,73 @@ fun OrderDetailDialog(
                 .padding(14.dp)
                 .widthIn(max = 620.dp)
                 .fillMaxWidth()
-                .shadow(16.dp, RoundedCornerShape(26.dp))
-                .clip(RoundedCornerShape(26.dp))
-                .border(1.dp, colors.cardBorder, RoundedCornerShape(26.dp))
+                .shadow(18.dp, RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(28.dp))
+                .border(1.2.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(28.dp))
                 .testTag("order_detail_dialog"),
             color = colors.cardSurface
         ) {
             Column(
                 modifier = Modifier
-                    .padding(18.dp)
                     .verticalScroll(rememberScrollState())
+                    .padding(18.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Header Card
+                Surface(
+                    color = colors.secondarySurface,
+                    shape = RoundedCornerShape(22.dp),
+                    border = BorderStroke(1.dp, colors.cardBorder),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .shadow(6.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.35f))
+                                    .background(colors.warmAccentGradient, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = order.customerName.take(1).ifBlank { "ع" },
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.White
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = order.customerName,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = colors.textPrimary
+                                )
+                                Text(
+                                    text = DateUtils.formatDate(order.orderDate),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.textSecondary
+                                )
+                            }
+                        }
+
                         Box(
                             modifier = Modifier
-                                .size(48.dp)
-                                .background(colors.warmAccentGradient, CircleShape),
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(colors.cardSurface)
+                                .border(1.dp, colors.cardBorder, CircleShape)
+                                .bounceClick(onClick = onDismiss),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = order.customerName.take(1).ifBlank { "ع" },
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color.White
-                            )
+                            Icon(Icons.Default.Close, contentDescription = "إغلاق", tint = colors.textPrimary, modifier = Modifier.size(18.dp))
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = order.customerName,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = colors.textPrimary
-                            )
-                            Text(
-                                text = DateUtils.formatDate(order.orderDate),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = colors.textSecondary
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(colors.secondarySurface)
-                            .border(1.dp, colors.cardBorder, CircleShape)
-                            .bounceClick(onClick = onDismiss),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = "إغلاق", tint = colors.textPrimary, modifier = Modifier.size(18.dp))
                     }
                 }
 
@@ -190,11 +201,11 @@ fun OrderDetailDialog(
                     Spacer(modifier = Modifier.height(10.dp))
                     Surface(
                         color = colors.profitContainer,
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(18.dp),
                         border = BorderStroke(1.dp, colors.profitGreen.copy(alpha = 0.4f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Column(modifier = Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             if (order.isFromCustomer) {
                                 Text(
                                     text = "طلب مرسل من قسم العملاء 🛍️",
@@ -294,7 +305,6 @@ fun OrderDetailDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Live Tracking Status Selector for Admin (updates Firestore directly for Customer "طلباتي")
                 Text(
                     text = "تحديث حالة التجهيز والتوصيل للعميل:",
                     style = MaterialTheme.typography.labelLarge,
@@ -329,16 +339,16 @@ fun OrderDetailDialog(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp)),
+                        .border(1.dp, colors.cardBorder, RoundedCornerShape(22.dp)),
                     colors = CardDefaults.cardColors(containerColor = colors.secondarySurface),
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(22.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("إجمالي البيع للعميل:", color = colors.textSecondary)
                             Text(
                                 text = DateUtils.formatCurrencyWithDecimal(order.salePrice),
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.ExtraBold,
                                 color = colors.primaryBrand,
                                 fontSize = 16.sp
                             )
@@ -368,21 +378,28 @@ fun OrderDetailDialog(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     modifier = Modifier
-                                        .size(30.dp)
+                                        .size(32.dp)
                                         .background(colors.profitContainer, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.Default.TrendingUp, contentDescription = null, tint = colors.profitGreen, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.TrendingUp, contentDescription = null, tint = colors.profitGreen, modifier = Modifier.size(17.dp))
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("إجمالي ربح الأوردر:", fontWeight = FontWeight.Bold, color = colors.onProfitContainer)
+                                Text("إجمالي ربح الأوردر:", fontWeight = FontWeight.ExtraBold, color = colors.onProfitContainer)
                             }
-                            Text(
-                                text = DateUtils.formatCurrencyWithDecimal(order.netProfit),
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 19.sp,
-                                color = colors.profitGreen
-                            )
+                            Surface(
+                                color = colors.profitContainer,
+                                shape = RoundedCornerShape(50),
+                                border = BorderStroke(1.dp, colors.profitGreen.copy(alpha = 0.45f))
+                            ) {
+                                Text(
+                                    text = DateUtils.formatCurrencyWithDecimal(order.netProfit),
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 17.sp,
+                                    color = colors.profitGreen,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -392,7 +409,7 @@ fun OrderDetailDialog(
                 Text(
                     text = "الأصناف المسجلة بالأوردر",
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     color = colors.textPrimary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -415,7 +432,7 @@ fun OrderDetailDialog(
                                         ProductThumbnail(
                                             imagePath = li.productImagePathSnapshot,
                                             contentDescription = li.productNameSnapshot,
-                                            size = 46.dp,
+                                            size = 48.dp,
                                             cornerRadius = 14.dp
                                         )
                                         Spacer(modifier = Modifier.width(10.dp))
