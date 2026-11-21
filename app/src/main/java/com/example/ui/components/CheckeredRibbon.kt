@@ -12,16 +12,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.ui.theme.AppTheme
 
-/**
- * A subtle decorative red-and-white checkered ribbon (bistro / Egyptian homemade brand accent).
- */
 @Composable
 fun CheckeredRibbon(
     modifier: Modifier = Modifier,
     height: Dp = 6.dp,
     squareSize: Dp = 6.dp,
     primaryColor: Color = AppTheme.colors.primaryBrand,
-    secondaryColor: Color = AppTheme.colors.cardSurface.copy(alpha = 0.9f)
+    secondaryColor: Color = AppTheme.colors.goldAccent.copy(alpha = 0.35f)
 ) {
     Canvas(
         modifier = modifier
@@ -34,8 +31,8 @@ fun CheckeredRibbon(
 
         for (row in 0 until numRows) {
             for (col in 0 until numColumns) {
-                val isRed = (row + col) % 2 == 0
-                val color = if (isRed) primaryColor else secondaryColor
+                val isPrimary = (row + col) % 2 == 0
+                val color = if (isPrimary) primaryColor else secondaryColor
                 drawRect(
                     color = color,
                     topLeft = Offset(col * sizePx, row * sizePx),
