@@ -49,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -144,6 +145,7 @@ fun MenuPreviewSection(
                 modifier = Modifier
                     .weight(1.3f)
                     .defaultMinSize(minHeight = 48.dp)
+                    .shadow(6.dp, RoundedCornerShape(50), spotColor = colors.primaryBrand.copy(alpha = 0.35f))
                     .bounceClick()
                     .testTag("export_menu_png_btn"),
                 shape = RoundedCornerShape(50),
@@ -165,6 +167,7 @@ fun MenuPreviewSection(
                 modifier = Modifier
                     .weight(1.2f)
                     .defaultMinSize(minHeight = 48.dp)
+                    .shadow(6.dp, RoundedCornerShape(50), spotColor = Color(0xFF25D366).copy(alpha = 0.35f))
                     .bounceClick()
                     .testTag("share_menu_whatsapp_btn"),
                 shape = RoundedCornerShape(50),
@@ -180,9 +183,10 @@ fun MenuPreviewSection(
 
         if (previewBitmaps.size > 1) {
             Surface(
-                color = colors.cardSurface,
-                shape = RoundedCornerShape(20.dp),
-                border = BorderStroke(1.dp, colors.cardBorder),
+                color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
+                shape = RoundedCornerShape(22.dp),
+                border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
+                shadowElevation = if (colors.isDark) 0.dp else 3.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -224,10 +228,11 @@ fun MenuPreviewSection(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, colors.primaryBrand.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
+                .shadow(10.dp, RoundedCornerShape(24.dp), spotColor = colors.primaryBrand.copy(alpha = 0.25f))
+                .border(1.5.dp, colors.primaryBrand.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
                 .testTag("menu_poster_preview_card"),
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(containerColor = colors.cardSurface)
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface)
         ) {
             Box(
                 modifier = Modifier
@@ -249,7 +254,7 @@ fun MenuPreviewSection(
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(RoundedCornerShape(22.dp))
+                            .clip(RoundedCornerShape(24.dp))
                     )
                 }
             }
@@ -284,9 +289,9 @@ fun MenuPreviewSection(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 generatedMenus.take(6).forEach { export ->
                     Surface(
-                        color = colors.cardSurface,
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, colors.cardBorder),
+                        color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
+                        shape = RoundedCornerShape(18.dp),
+                        border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
