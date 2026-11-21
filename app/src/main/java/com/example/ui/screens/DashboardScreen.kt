@@ -424,7 +424,7 @@ fun DashboardScreen(
                                 color = Color(0xFFFFE599)
                             )
                             Spacer(modifier = Modifier.height(4.dp))
-                            AnimatedCurrencyCounter(
+                           AnimatedCurrencyCounter(
                                 targetValue = stats.grossProfitBeforeExpenses,
                                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
                                 color = Color(0xFFFFE599),
@@ -432,7 +432,8 @@ fun DashboardScreen(
                             )
                         }
                     }
-               Spacer(modifier = Modifier.height(14.dp))
+
+                    Spacer(modifier = Modifier.height(14.dp))
                     val netFinalProfit = stats.grossProfitBeforeExpenses - stats.totalExpenses
                     Surface(
                         color = Color.Black.copy(alpha = 0.24f),
@@ -459,8 +460,8 @@ fun DashboardScreen(
                             )
                         }
                     }
+                }
             }
-
             Spacer(modifier = Modifier.height(14.dp))
 
             // KPI Cards Row 1 (Financial)
