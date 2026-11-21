@@ -306,7 +306,7 @@ class CloudSyncManager(
                 val tracked = snapshot.documents.mapNotNull { doc ->
                     val cid = doc.getString("cloudId") ?: doc.id
                     @Suppress("UNCHECKED_CAST")
-                    val rawItems = doc.get("lineItems") as? List> ?: emptyList()
+                    val rawItems = (doc.get("lineItems") as? List<*>)?.mapNotNull { it as? Map<*, *> } ?: emptyList()
                     val items = rawItems.map { map ->
                         TrackedOrderLineItem(
                             menuItemId = (map["menuItemId"] as? Number)?.toLong() ?: 0L,
@@ -343,7 +343,6 @@ class CloudSyncManager(
             .addSnapshotListener { snapshot, error ->
                 if (error != null || snapshot == null) return@addSnapshotListener
                 scope.launch(Dispatchers.IO) {
-                    // Handle deleted orders from cloud so they are removed locally too
                     for (change in snapshot.documentChanges) {
                         if (change.type == DocumentChange.Type.REMOVED) {
                             val removedCloudId = change.document.getString("cloudId") ?: change.document.id
@@ -380,7 +379,7 @@ class CloudSyncManager(
                         val ym = doc.getString("yearMonth") ?: DateUtils.getYearMonthFromTimestamp(orderDate)
 
                         @Suppress("UNCHECKED_CAST")
-                        val rawItems = doc.get("lineItems") as? List> ?: emptyList()
+                        val rawItems = (doc.get("lineItems") as? List<*>)?.mapNotNull { it as? Map<*, *> } ?: emptyList()
                         val lineEntities = rawItems.map { map ->
                             val productId = (map["productId"] as? Number)?.toLong()
                             val qty = (map["quantity"] as? Number)?.toDouble() ?: 1.0
@@ -799,17 +798,7 @@ class CloudSyncManager(
             Result.failure(e)
         }
     }
-suspend fun deleteOrderFromCloud(cloudId: String) {
-        if (cloudId.isBlank()) return
-        val db = firestore ?: return
-        try {
-            db.collection(COL_ORDERS)
-                .document(cloudId)
-                .delete()
-                .await()
-        } catch (_: Exception) {
-        }
-    }
+
     companion object {
         const val CLOUD_APP_NAME = "akleh_helwa_cloud"
         const val COL_MENU_CATEGORIES = "menu_categories"
