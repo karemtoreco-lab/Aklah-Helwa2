@@ -92,6 +92,24 @@ data class TopProductStat(
     val orderCount: Int
 )
 
+data class ShoppingListItem(
+    val productName: String,
+    val totalQuantity: Double,
+    val ordersCount: Int,
+    val estimatedCost: Double
+)
+
+data class TreasurySummary(
+    val cashInDrawer: Double = 0.0,
+    val revolvingCapital: Double = 0.0,
+    val homeLoanDebt: Double = 0.0,
+    val totalHistoricalProfit: Double = 0.0,
+    val profitReinvestedInMaterials: Double = 0.0,
+    val availableProfitToWithdraw: Double = 0.0,
+    val totalCollectedFromOrders: Double = 0.0,
+    val pendingCustomerReceivables: Double = 0.0
+)
+
 data class MonthlyStats(
     val yearMonth: String = "",
     val totalSales: Double = 0.0,
@@ -117,11 +135,15 @@ data class DraftOrderLineItem(
     val unitLabel: String = "كيلو",
     val quantity: Double = 1.0,
     val unitPurchaseCost: Double = 0.0,
-    val unitSellingPrice: Double = 0.0
+    val unitSellingPrice: Double = 0.0,
+    val isTotalCostForWholeQty: Boolean = false
 ) {
-    val totalPurchaseCost: Double get() = quantity * unitPurchaseCost
-    val totalSellingPrice: Double get() = quantity * unitSellingPrice
-    val itemGrossProfit: Double get() = totalSellingPrice - totalPurchaseCost
+    val totalPurchaseCost: Double
+        get() = if (isTotalCostForWholeQty) unitPurchaseCost else quantity * unitPurchaseCost
+    val totalSellingPrice: Double
+        get() = quantity * unitSellingPrice
+    val itemGrossProfit: Double
+        get() = totalSellingPrice - totalPurchaseCost
 }
 
 data class CustomerCartItem(
@@ -184,4 +206,3 @@ data class AppVersionConfig(
         return latestVersionCode > installedVersionCode && downloadUrl.isNotBlank()
     }
 }
-
