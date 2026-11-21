@@ -70,11 +70,11 @@ fun SalesAndProfitChartCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
+            .border(1.dp, colors.cardBorder, RoundedCornerShape(22.dp))
             .testTag("sales_profit_chart_card"),
         colors = CardDefaults.cardColors(containerColor = colors.cardSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 2.dp),
-        shape = RoundedCornerShape(20.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 3.dp),
+        shape = RoundedCornerShape(22.dp)
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             FlowRow(
@@ -83,12 +83,20 @@ fun SalesAndProfitChartCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.BarChart, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(colors.primaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.BarChart, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "منحنى المبيعات والأرباح",
                         style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
                         color = colors.textPrimary
                     )
                 }
@@ -125,10 +133,10 @@ fun SalesAndProfitChartCard(
                     progress = animProgress,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp)
+                        .height(155.dp)
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
@@ -145,7 +153,7 @@ fun SalesAndProfitChartCard(
                                 text = "يوم ${pt.dayNumber}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = colors.textSecondary,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
                             )
                         }
                     }
@@ -165,11 +173,11 @@ fun OrdersVolumeChartCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
+            .border(1.dp, colors.cardBorder, RoundedCornerShape(22.dp))
             .testTag("orders_over_time_chart_card"),
         colors = CardDefaults.cardColors(containerColor = colors.cardSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 2.dp),
-        shape = RoundedCornerShape(20.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 3.dp),
+        shape = RoundedCornerShape(22.dp)
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             FlowRow(
@@ -178,12 +186,20 @@ fun OrdersVolumeChartCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Timeline, contentDescription = null, tint = colors.secondaryAccent, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(colors.secondaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Timeline, contentDescription = null, tint = colors.secondaryAccent, modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "تدفق الأوردرات خلال الشهر",
                         style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
                         color = colors.textPrimary
                     )
                 }
@@ -215,7 +231,7 @@ fun OrdersVolumeChartCard(
                     progress = animProgress,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp)
+                        .height(125.dp)
                 )
             }
         }
@@ -347,7 +363,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSmoothAreaAndLi
     drawPath(
         path = areaPath,
         brush = Brush.verticalGradient(
-            colors = listOf(lineColor.copy(alpha = 0.30f), lineColor.copy(alpha = 0.02f)),
+            colors = listOf(lineColor.copy(alpha = 0.32f), lineColor.copy(alpha = 0.02f)),
             startY = 0f,
             endY = baselineY
         )
@@ -369,20 +385,28 @@ fun ProductPerformanceCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
+            .border(1.dp, colors.cardBorder, RoundedCornerShape(22.dp))
             .testTag("product_performance_card"),
         colors = CardDefaults.cardColors(containerColor = colors.cardSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 2.dp),
-        shape = RoundedCornerShape(20.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 3.dp),
+        shape = RoundedCornerShape(22.dp)
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Leaderboard, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(6.dp))
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(colors.secondaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Leaderboard, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(18.dp))
+                }
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "الأصناف الأكثر مبيعاً وأداءً",
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     color = colors.textPrimary
                 )
             }
@@ -395,8 +419,8 @@ fun ProductPerformanceCard(
                 var animateBars by remember { mutableStateOf(false) }
                 LaunchedEffect(topProducts) { animateBars = true }
 
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    topProducts.take(6).forEach { prod ->
+                Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
+                    topProducts.take(6).forEachIndexed { index, prod ->
                         val targetRatio = (prod.totalQuantity / maxQty).toFloat().coerceIn(0.08f, 1f)
                         val ratio by animateFloatAsState(
                             targetValue = if (animateBars) targetRatio else 0.05f,
@@ -408,6 +432,12 @@ fun ProductPerformanceCard(
                         } else {
                             prod.totalQuantity.toString()
                         }
+                        val rankColor = when (index) {
+                            0 -> colors.goldAccent
+                            1 -> colors.primaryBrand
+                            2 -> colors.profitGreen
+                            else -> colors.textSecondary
+                        }
 
                         Column {
                             Row(
@@ -415,15 +445,35 @@ fun ProductPerformanceCard(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = prod.productName,
-                                    color = colors.textPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f)
-                                )
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(22.dp)
+                                            .clip(CircleShape)
+                                            .background(rankColor.copy(alpha = 0.16f))
+                                            .border(1.dp, rankColor.copy(alpha = 0.4f), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "${index + 1}",
+                                            color = rankColor,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 11.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = prod.productName,
+                                        color = colors.textPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Surface(
                                     color = colors.profitContainer,
