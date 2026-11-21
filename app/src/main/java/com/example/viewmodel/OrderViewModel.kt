@@ -1027,14 +1027,17 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-
-    fun deleteOrder(order: Order) {
+fun deleteOrder(order: Order) {
         viewModelScope.launch(Dispatchers.IO) {
             orderRepository.deleteOrder(order)
+            if (order.cloudId.isNotBlank()) {
+                cloudSyncManager.deleteOrderFromCloud(order.cloudId)
+            }
             withContext(Dispatchers.Main) {
                 if (_selectedOrderDetails.value?.id == order.id) {
                     _selectedOrderDetails.value = null
                 }
+                _uiMessage.value = "تم حذف الأوردر نهائياً من التطبيق والسحابة"
             }
         }
     }
