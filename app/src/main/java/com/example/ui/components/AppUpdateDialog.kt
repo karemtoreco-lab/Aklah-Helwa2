@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -69,36 +68,46 @@ fun AppUpdateDialog(
                 .padding(20.dp)
                 .widthIn(max = 480.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(30.dp))
                 .border(
                     width = 1.5.dp,
-                    color = if (colors.isDark) colors.glassBorder else colors.goldAccent.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(28.dp)
+                    color = if (colors.isDark) colors.glassBorder else colors.goldAccent.copy(alpha = 0.55f),
+                    shape = RoundedCornerShape(30.dp)
                 )
                 .testTag("app_update_dialog"),
             color = colors.cardSurface,
-            shadowElevation = 18.dp
+            shadowElevation = 20.dp
         ) {
             Column(
-                modifier = Modifier.padding(22.dp),
+                modifier = Modifier
+                    .background(colors.cardHighlightGradient)
+                    .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(74.dp)
-                        .shadow(14.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.55f))
+                        .size(92.dp)
                         .clip(CircleShape)
-                        .background(colors.warmAccentGradient)
-                        .border(2.dp, Color.White.copy(alpha = 0.35f), CircleShape),
+                        .background(colors.primaryBrand.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.SystemUpdate,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(36.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .shadow(14.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.55f))
+                            .clip(CircleShape)
+                            .background(colors.warmAccentGradient)
+                            .border(2.dp, Color.White.copy(alpha = 0.35f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SystemUpdate,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(34.dp)
+                        )
+                    }
                 }
 
                 Text(
@@ -143,7 +152,7 @@ fun AppUpdateDialog(
                 Surface(
                     color = colors.secondarySurface,
                     shape = RoundedCornerShape(18.dp),
-                    border = BorderStroke(1.dp, colors.cardBorder),
+                    border = BorderStroke(1.dp, colors.goldAccent.copy(alpha = 0.35f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
