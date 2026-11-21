@@ -111,7 +111,9 @@ fun MonthlyStatsScreen(
     }
 
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.backgroundGradient),
         contentAlignment = Alignment.TopCenter
     ) {
         Column(
@@ -126,12 +128,12 @@ fun MonthlyStatsScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             Surface(
-                color = colors.cardSurface,
+                color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
                 shape = RoundedCornerShape(22.dp),
-                border = BorderStroke(1.dp, colors.cardBorder),
+                border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(4.dp, RoundedCornerShape(22.dp))
+                    .shadow(if (colors.isDark) 0.dp else 4.dp, RoundedCornerShape(22.dp))
                     .testTag("month_selector_card")
             ) {
                 Row(
@@ -185,7 +187,7 @@ fun MonthlyStatsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
-                    .shadow(10.dp, RoundedCornerShape(26.dp), spotColor = colors.primaryBrand.copy(alpha = 0.35f)),
+                    .shadow(12.dp, RoundedCornerShape(26.dp), spotColor = colors.primaryBrand.copy(alpha = 0.4f)),
                 shape = RoundedCornerShape(26.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent)
             ) {
@@ -231,7 +233,7 @@ fun MonthlyStatsScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(18.dp))
-                                .background(Color.Black.copy(alpha = 0.25f))
+                                .background(Color.Black.copy(alpha = 0.26f))
                                 .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(18.dp))
                                 .padding(12.dp)
                                 .testTag("net_profit_card")
@@ -267,10 +269,10 @@ fun MonthlyStatsScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
+                    .border(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(22.dp))
                     .testTag("costs_summary_card"),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.cardSurface)
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -310,10 +312,10 @@ fun MonthlyStatsScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatCountChip("الأوردرات", stats.totalOrdersCount, colors.cardSurface, colors.textPrimary, Icons.Default.ShoppingBag, Modifier.weight(1f))
+                StatCountChip("الأوردرات", stats.totalOrdersCount, if (colors.isDark) colors.glassSurface else colors.cardSurface, colors.textPrimary, Icons.Default.ShoppingBag, Modifier.weight(1f))
                 StatCountChip("تم التسليم", stats.deliveredCount, colors.profitContainer, colors.onProfitContainer, Icons.Default.CheckCircle, Modifier.weight(1f))
                 StatCountChip("قيد التجهيز", stats.pendingCount, colors.secondaryContainer, colors.goldAccent, Icons.Default.HourglassTop, Modifier.weight(1f))
-                StatCountChip("العملاء", stats.uniqueCustomersCount, colors.cardSurface, colors.secondaryAccent, Icons.Default.Group, Modifier.weight(1f))
+                StatCountChip("العملاء", stats.uniqueCustomersCount, if (colors.isDark) colors.glassSurface else colors.cardSurface, colors.secondaryAccent, Icons.Default.Group, Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -329,10 +331,10 @@ fun MonthlyStatsScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
+                    .border(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(22.dp))
                     .testTag("separate_expenses_section"),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.cardSurface)
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -373,7 +375,7 @@ fun MonthlyStatsScreen(
                     if (expenses.isEmpty()) {
                         Surface(
                             color = colors.secondarySurface,
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(16.dp),
                             border = BorderStroke(1.dp, colors.cardBorder),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -390,7 +392,7 @@ fun MonthlyStatsScreen(
                                 StaggeredAppearItem(index = idx) {
                                     Surface(
                                         color = colors.secondarySurface,
-                                        shape = RoundedCornerShape(14.dp),
+                                        shape = RoundedCornerShape(16.dp),
                                         border = BorderStroke(1.dp, colors.cardBorder),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
@@ -433,6 +435,7 @@ fun MonthlyStatsScreen(
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = 54.dp)
                     .wrapContentHeight()
+                    .shadow(8.dp, RoundedCornerShape(50), spotColor = colors.profitGreen.copy(alpha = 0.4f))
                     .bounceClick()
                     .testTag("share_monthly_report_btn"),
                 shape = RoundedCornerShape(50),
