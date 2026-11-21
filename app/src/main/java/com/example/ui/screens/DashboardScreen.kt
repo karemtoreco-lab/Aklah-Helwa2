@@ -71,6 +71,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -161,19 +162,34 @@ fun DashboardScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(modifier = Modifier.weight(1f, fill = false)) {
-                    Text(
-                        text = greeting,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = colors.primaryBrand
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.app_logo),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(CircleShape)
+                            .border(1.5.dp, colors.goldAccent, CircleShape)
                     )
-                    Text(
-                        text = "أهلاً بكِ يا أ/ نهى ماهر",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = colors.textPrimary
-                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = greeting,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.primaryBrand
+                        )
+                        Text(
+                            text = "أهلاً بكِ يا أ/ نهى ماهر",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = colors.textPrimary
+                        )
+                    }
                 }
 
                 Row(
@@ -202,7 +218,7 @@ fun DashboardScreen(
                             )
                             Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                text = "التحقق من التحديثات",
+                                text = "التحديثات",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = colors.textPrimary,
@@ -215,7 +231,7 @@ fun DashboardScreen(
                         color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
                         shape = RoundedCornerShape(50),
                         border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
-                        shadowElevation = if (colors.isDark) 0.dp else 2.dp
+                        shadowElevation = if (colors.isDark) 0.dp else 3.dp
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -238,11 +254,12 @@ fun DashboardScreen(
             // Kitchen Live Status Control Switch Card
             Surface(
                 color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(22.dp),
                 border = BorderStroke(
                     1.dp,
                     if (kitchenOpen) colors.profitGreen.copy(alpha = 0.55f) else colors.goldAccent.copy(alpha = 0.55f)
                 ),
+                shadowElevation = if (colors.isDark) 0.dp else 3.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("dashboard_kitchen_switch_card")
@@ -257,7 +274,7 @@ fun DashboardScreen(
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                         Box(
                             modifier = Modifier
-                                .size(38.dp)
+                                .size(40.dp)
                                 .clip(CircleShape)
                                 .background(if (kitchenOpen) colors.profitContainer else colors.secondaryContainer),
                             contentAlignment = Alignment.Center
@@ -296,7 +313,7 @@ fun DashboardScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 Surface(
                     color = colors.profitContainer,
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(20.dp),
                     border = BorderStroke(1.dp, colors.profitGreen.copy(alpha = 0.45f)),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -304,7 +321,7 @@ fun DashboardScreen(
                         .testTag("new_customer_orders_banner")
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = colors.profitGreen, modifier = Modifier.size(20.dp))
@@ -329,16 +346,16 @@ fun DashboardScreen(
                     .fillMaxWidth()
                     .wrapContentHeight()
                     .shadow(
-                        elevation = 12.dp,
+                        elevation = 14.dp,
                         shape = RoundedCornerShape(26.dp),
-                        spotColor = colors.primaryBrand.copy(alpha = 0.4f)
+                        spotColor = colors.primaryBrand.copy(alpha = 0.45f)
                     )
                     .clip(RoundedCornerShape(26.dp))
                     .background(colors.heroGradient)
                     .border(
                         width = 1.dp,
                         brush = Brush.linearGradient(
-                            listOf(colors.goldAccent.copy(alpha = 0.55f), Color.White.copy(alpha = 0.15f))
+                            listOf(colors.goldAccent.copy(alpha = 0.6f), Color.White.copy(alpha = 0.18f))
                         ),
                         shape = RoundedCornerShape(26.dp)
                     )
@@ -365,7 +382,7 @@ fun DashboardScreen(
                         }
 
                         Surface(
-                            color = Color.White.copy(alpha = 0.92f),
+                            color = Color.White.copy(alpha = 0.94f),
                             shape = RoundedCornerShape(50)
                         ) {
                             Row(
@@ -424,7 +441,7 @@ fun DashboardScreen(
                                 color = Color(0xFFFFE599)
                             )
                             Spacer(modifier = Modifier.height(4.dp))
-                           AnimatedCurrencyCounter(
+                            AnimatedCurrencyCounter(
                                 targetValue = stats.grossProfitBeforeExpenses,
                                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
                                 color = Color(0xFFFFE599),
@@ -436,13 +453,13 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.height(14.dp))
                     val netFinalProfit = stats.grossProfitBeforeExpenses - stats.totalExpenses
                     Surface(
-                        color = Color.Black.copy(alpha = 0.24f),
-                        shape = RoundedCornerShape(14.dp),
+                        color = Color.Black.copy(alpha = 0.26f),
+                        shape = RoundedCornerShape(16.dp),
                         border = BorderStroke(1.dp, Color(0xFFFFE599).copy(alpha = 0.35f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -450,7 +467,7 @@ fun DashboardScreen(
                                 text = "صافي الربح النهائي (بعد المصاريف):",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White.copy(alpha = 0.9f)
+                                color = Color.White.copy(alpha = 0.92f)
                             )
                             Text(
                                 text = DateUtils.formatCurrency(netFinalProfit),
@@ -555,8 +572,9 @@ fun DashboardScreen(
             // Expandable Registered App Users List
             Surface(
                 color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(22.dp),
                 border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
+                shadowElevation = if (colors.isDark) 0.dp else 3.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("dashboard_users_list_card")
@@ -605,7 +623,7 @@ fun DashboardScreen(
                                     val isLive = u.isLiveOnline(now)
                                     Surface(
                                         color = colors.secondarySurface,
-                                        shape = RoundedCornerShape(14.dp),
+                                        shape = RoundedCornerShape(16.dp),
                                         border = BorderStroke(1.dp, if (isLive) colors.profitGreen.copy(alpha = 0.45f) else colors.cardBorder),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
@@ -721,8 +739,8 @@ fun DashboardScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(20.dp)),
-                    shape = RoundedCornerShape(20.dp),
+                        .border(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(22.dp)),
+                    shape = RoundedCornerShape(22.dp),
                     colors = CardDefaults.cardColors(containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface)
                 ) {
                     Column(
@@ -802,9 +820,9 @@ private fun LiveOnlineUsersKpiCard(
 
     Surface(
         color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(22.dp),
         border = BorderStroke(1.dp, colors.profitGreen.copy(alpha = 0.55f)),
-        shadowElevation = if (colors.isDark) 0.dp else 2.dp,
+        shadowElevation = if (colors.isDark) 0.dp else 3.dp,
         modifier = modifier.wrapContentHeight()
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
@@ -863,9 +881,9 @@ private fun AnimatedMiniKpiCard(
     val colors = AppTheme.colors
     Surface(
         color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(22.dp),
         border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
-        shadowElevation = if (colors.isDark) 0.dp else 2.dp,
+        shadowElevation = if (colors.isDark) 0.dp else 3.dp,
         modifier = modifier.wrapContentHeight()
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
@@ -911,12 +929,12 @@ private fun QuickActionTile(
     val colors = AppTheme.colors
     Box(
         modifier = modifier
-            .defaultMinSize(minHeight = 50.dp)
+            .defaultMinSize(minHeight = 52.dp)
             .wrapContentHeight()
-            .shadow(4.dp, RoundedCornerShape(18.dp))
-            .clip(RoundedCornerShape(18.dp))
+            .shadow(4.dp, RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(20.dp))
             .background(accentBrush)
-            .border(1.dp, colors.cardBorder, RoundedCornerShape(18.dp))
+            .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
             .bounceClick(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
@@ -938,12 +956,12 @@ fun RecentOrderItem(order: Order, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .border(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(20.dp))
+            .border(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(22.dp))
             .bounceClick(onClick = onClick)
             .testTag("recent_order_${order.id}"),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 3.dp)
     ) {
         Row(
             modifier = Modifier
@@ -955,7 +973,7 @@ fun RecentOrderItem(order: Order, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
+                        .size(44.dp)
                         .background(colors.warmAccentGradient, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
