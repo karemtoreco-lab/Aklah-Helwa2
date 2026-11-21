@@ -12,6 +12,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -62,6 +64,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -75,6 +78,7 @@ import com.example.ui.components.ThemeToggleIconButton
 import com.example.ui.components.bounceClick
 import com.example.ui.theme.AppTheme
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun OnboardingScreen(
     isDarkMode: Boolean,
@@ -147,7 +151,7 @@ fun OnboardingScreen(
                         modifier = Modifier
                             .size(44.dp)
                             .clip(CircleShape)
-                            .background(colors.secondarySurface.copy(alpha = 0.7f))
+                            .background(colors.secondarySurface.copy(alpha = 0.8f))
                             .border(1.dp, colors.cardBorder, CircleShape)
                             .testTag("onboarding_admin_lock_btn")
                     ) {
@@ -171,7 +175,7 @@ fun OnboardingScreen(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(126.dp)
+                        .size(128.dp)
                         .graphicsLayer {
                             scaleX = haloScale
                             scaleY = haloScale
@@ -217,9 +221,10 @@ fun OnboardingScreen(
 
                 Text(
                     text = "أهلاً بك في أكلة حلوة ✨",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineMedium.merge(
+                        TextStyle(brush = colors.warmAccentGradient)
+                    ),
                     fontWeight = FontWeight.ExtraBold,
-                    color = colors.textPrimary,
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(6.dp))
@@ -233,9 +238,9 @@ fun OnboardingScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Feature Trust Badges
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     listOf("تجهيز بيتي طازج", "مكونات طبيعية", "توصيل سريع").forEach { badge ->
@@ -249,7 +254,7 @@ fun OnboardingScreen(
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = colors.goldAccent,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 11.dp, vertical = 4.dp)
                             )
                         }
                     }
@@ -270,7 +275,7 @@ fun OnboardingScreen(
                             )
                         )
                     ),
-                    shadowElevation = if (colors.isDark) 0.dp else 8.dp,
+                    shadowElevation = if (colors.isDark) 0.dp else 10.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -280,7 +285,8 @@ fun OnboardingScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(38.dp)
+                                    .shadow(4.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.35f))
                                     .clip(CircleShape)
                                     .background(colors.warmAccentGradient),
                                 contentAlignment = Alignment.Center
@@ -291,7 +297,7 @@ fun OnboardingScreen(
                             Text(
                                 text = "تسجيل سريع لعملاء المنيو",
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.ExtraBold,
                                 color = colors.textPrimary
                             )
                         }
@@ -395,9 +401,9 @@ fun OnboardingScreen(
                 Spacer(modifier = Modifier.height(22.dp))
 
                 Surface(
-                    color = colors.secondarySurface.copy(alpha = 0.75f),
+                    color = colors.secondarySurface.copy(alpha = 0.8f),
                     shape = RoundedCornerShape(50),
-                    border = BorderStroke(1.dp, colors.goldAccent.copy(alpha = 0.35f))
+                    border = BorderStroke(1.dp, colors.goldAccent.copy(alpha = 0.4f))
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp),
