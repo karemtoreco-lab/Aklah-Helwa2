@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.example.model.Order
 import com.example.model.OrderLineItemEntity
+import com.example.model.TreasuryTransactionEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -75,4 +76,17 @@ interface OrderDao {
 
     @Query("SELECT COUNT(*) FROM orders")
     suspend fun getCount(): Int
+
+    // Treasury & Capital Transactions
+    @Query("SELECT * FROM treasury_transactions ORDER BY createdAt DESC")
+    fun getAllTreasuryTransactions(): Flow<List<TreasuryTransactionEntity>>
+
+    @Query("SELECT * FROM treasury_transactions WHERE cloudId = :cloudId LIMIT 1")
+    suspend fun getTreasuryTxByCloudId(cloudId: String): TreasuryTransactionEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTreasuryTransaction(tx: TreasuryTransactionEntity): Long
+
+    @Delete
+    suspend fun deleteTreasuryTransaction(tx: TreasuryTransactionEntity)
 }
