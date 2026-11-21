@@ -261,7 +261,6 @@ fun MenuManagementScreen(
         contentAlignment = Alignment.TopCenter
     ) {
         if (subTab == 0) {
-            // Single unified LazyColumn so top controls, search bar, horizontal category chips, and cards scroll cleanly together
             LazyColumn(
                 modifier = Modifier
                     .widthIn(max = 840.dp)
@@ -276,6 +275,7 @@ fun MenuManagementScreen(
                         color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
                         shape = RoundedCornerShape(50),
                         border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
+                        shadowElevation = if (colors.isDark) 0.dp else 3.dp,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(modifier = Modifier.padding(4.dp)) {
@@ -308,16 +308,16 @@ fun MenuManagementScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .defaultMinSize(minHeight = 50.dp)
+                            .defaultMinSize(minHeight = 52.dp)
                             .wrapContentHeight()
-                            .shadow(6.dp, RoundedCornerShape(50))
+                            .shadow(8.dp, RoundedCornerShape(50), spotColor = colors.primaryBrand.copy(alpha = 0.4f))
                             .clip(RoundedCornerShape(50))
                             .background(colors.warmAccentGradient)
                             .bounceClick {
                                 subTab = 1
                                 onExportAllPages {}
                             }
-                            .padding(vertical = 12.dp, horizontal = 16.dp)
+                            .padding(vertical = 13.dp, horizontal = 16.dp)
                             .testTag("save_and_export_menu_btn"),
                         contentAlignment = Alignment.Center
                     ) {
@@ -390,32 +390,41 @@ fun MenuManagementScreen(
                 }
 
                 item(key = "menu_search_bar") {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text("ابحث عن صنف داخل المنيو...", color = colors.textSecondary) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = colors.primaryBrand) },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "مسح البحث", tint = colors.textSecondary)
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(18.dp),
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag("menu_search_input"),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface,
-                            unfocusedContainerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface,
-                            focusedBorderColor = colors.primaryBrand,
-                            unfocusedBorderColor = colors.cardBorder,
-                            focusedTextColor = colors.textPrimary,
-                            unfocusedTextColor = colors.textPrimary
+                            .shadow(if (colors.isDark) 0.dp else 3.dp, RoundedCornerShape(20.dp)),
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
+                        border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder)
+                    ) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("ابحث عن صنف داخل المنيو...", color = colors.textSecondary) },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = colors.primaryBrand) },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "مسح البحث", tint = colors.textSecondary)
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("menu_search_input"),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = colors.textPrimary,
+                                unfocusedTextColor = colors.textPrimary
+                            )
                         )
-                    )
+                    }
                 }
 
                 item(key = "menu_category_filter_row") {
@@ -451,13 +460,14 @@ fun MenuManagementScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .shadow(if (colors.isDark) 0.dp else 4.dp, RoundedCornerShape(22.dp))
                                 .border(
                                     1.dp,
                                     if (colors.isDark) colors.glassBorder else colors.cardBorder,
-                                    RoundedCornerShape(20.dp)
+                                    RoundedCornerShape(22.dp)
                                 )
                                 .testTag("menu_category_card_${cat.id}"),
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(22.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface
                             )
@@ -471,7 +481,7 @@ fun MenuManagementScreen(
                                     Box(
                                         modifier = Modifier
                                             .background(colors.warmAccentGradient, RoundedCornerShape(50))
-                                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                                            .padding(horizontal = 13.dp, vertical = 6.dp)
                                     ) {
                                         Text(
                                             text = "${cat.name} (${catItems.size})",
@@ -542,7 +552,7 @@ fun MenuManagementScreen(
                                             val localThumb = photos.firstOrNull() ?: item.productId?.let { primaryImages[it] }
                                             Surface(
                                                 color = colors.secondarySurface,
-                                                shape = RoundedCornerShape(16.dp),
+                                                shape = RoundedCornerShape(18.dp),
                                                 border = BorderStroke(1.dp, colors.cardBorder),
                                                 modifier = Modifier
                                                     .fillMaxWidth()
@@ -558,9 +568,9 @@ fun MenuManagementScreen(
                                                 ) {
                                                     Box(
                                                         modifier = Modifier
-                                                            .size(48.dp)
-                                                            .clip(RoundedCornerShape(12.dp))
-                                                            .border(1.dp, colors.cardBorder, RoundedCornerShape(12.dp))
+                                                            .size(50.dp)
+                                                            .clip(RoundedCornerShape(14.dp))
+                                                            .border(1.dp, colors.cardBorder, RoundedCornerShape(14.dp))
                                                     ) {
                                                         SmartDishImage(
                                                             imageSource = localThumb,
@@ -618,7 +628,7 @@ fun MenuManagementScreen(
                                                             color = Color.White,
                                                             fontWeight = FontWeight.Bold,
                                                             fontSize = 11.sp,
-                                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
                                                         )
                                                     }
 
@@ -694,6 +704,7 @@ fun MenuManagementScreen(
                     color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
                     shape = RoundedCornerShape(50),
                     border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
+                    shadowElevation = if (colors.isDark) 0.dp else 3.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(modifier = Modifier.padding(4.dp)) {
