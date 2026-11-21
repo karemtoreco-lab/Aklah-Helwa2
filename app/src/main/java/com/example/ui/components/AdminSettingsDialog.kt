@@ -4,12 +4,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,10 +28,12 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SystemUpdate
@@ -58,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -74,6 +77,20 @@ import com.example.model.DeliveryZone
 import com.example.ui.theme.AppTheme
 import com.example.util.DateUtils
 import java.util.UUID
+
+@Composable
+private fun SettingsSectionBadge(icon: ImageVector, tint: Color) {
+    Box(
+        modifier = Modifier
+            .size(34.dp)
+            .clip(CircleShape)
+            .background(tint.copy(alpha = 0.16f))
+            .border(1.dp, tint.copy(alpha = 0.35f), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+    }
+}
 
 @Composable
 fun AdminSettingsDialog(
@@ -128,63 +145,95 @@ fun AdminSettingsDialog(
                 .widthIn(max = 580.dp)
                 .fillMaxWidth()
                 .imePadding()
-                .clip(RoundedCornerShape(26.dp))
-                .border(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(26.dp))
+                .clip(RoundedCornerShape(28.dp))
+                .border(1.2.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(28.dp))
                 .testTag("admin_settings_dialog"),
-            color = colors.cardSurface
+            color = colors.cardSurface,
+            shadowElevation = 18.dp
         ) {
             Column(
                 modifier = Modifier
-                    .padding(18.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "إعدادات الإدارة والمزامنة",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = colors.textPrimary
-                        )
-                        Text(
-                            text = "أكلة حلوة — بإدارة نهى ماهر",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = colors.textSecondary
-                        )
-                    }
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(colors.secondarySurface)
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = "إغلاق", tint = colors.textPrimary)
-                    }
-                }
-
-                // Theme Switch Card
+                // Header
                 Surface(
                     color = colors.secondarySurface,
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(20.dp),
                     border = BorderStroke(1.dp, colors.cardBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                            .padding(14.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("المظهر الليلي (Dark Mode)", fontWeight = FontWeight.Bold, color = colors.textPrimary)
-                            Text("تبديل بين الوضع الفاتح الدافئ والوضع الليلي الفاخر", style = MaterialTheme.typography.labelSmall, color = colors.textSecondary)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(CircleShape)
+                                    .background(colors.warmAccentGradient),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Settings, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "إعدادات الإدارة والمزامنة",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = colors.textPrimary
+                                )
+                                Text(
+                                    text = "أكلة حلوة — بإدارة نهى ماهر",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colors.goldAccent,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(colors.cardSurface)
+                                .border(1.dp, colors.cardBorder, CircleShape)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "إغلاق", tint = colors.textPrimary)
+                        }
+                    }
+                }
+
+                // Theme Switch Card
+                Surface(
+                    color = colors.secondarySurface,
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(1.dp, colors.cardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            SettingsSectionBadge(Icons.Default.DarkMode, colors.primaryBrand)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text("المظهر الليلي (Dark Mode)", fontWeight = FontWeight.Bold, color = colors.textPrimary)
+                                Text("تبديل بين الوضع الفاتح الدافئ والوضع الليلي الفاخر", style = MaterialTheme.typography.labelSmall, color = colors.textSecondary)
+                            }
                         }
                         Switch(checked = isDarkMode, onCheckedChange = { onToggleTheme() })
                     }
@@ -194,18 +243,18 @@ fun AdminSettingsDialog(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, colors.goldAccent.copy(alpha = 0.45f), RoundedCornerShape(20.dp))
+                        .border(1.dp, colors.goldAccent.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
                         .testTag("daily_offer_settings_card"),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(22.dp),
                     colors = CardDefaults.cardColors(containerColor = colors.secondarySurface)
                 ) {
                     Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(15.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Campaign, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
+                            SettingsSectionBadge(Icons.Default.Campaign, colors.goldAccent)
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text("عرض اليوم للعملاء (Daily Offer)", fontWeight = FontWeight.ExtraBold, color = colors.textPrimary)
                         }
                         Text(
@@ -217,7 +266,7 @@ fun AdminSettingsDialog(
                             value = offerInput,
                             onValueChange = { offerInput = it },
                             label = { Text("نص عرض اليوم (مثال: خصم 15% على صواني المحشي)") },
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(16.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("settings_daily_offer_input"),
@@ -263,18 +312,18 @@ fun AdminSettingsDialog(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, colors.secondaryAccent.copy(alpha = 0.45f), RoundedCornerShape(20.dp))
+                        .border(1.dp, colors.secondaryAccent.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
                         .testTag("delivery_zones_settings_card"),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(22.dp),
                     colors = CardDefaults.cardColors(containerColor = colors.secondarySurface)
                 ) {
                     Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(15.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.LocalShipping, contentDescription = null, tint = colors.secondaryAccent, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
+                            SettingsSectionBadge(Icons.Default.LocalShipping, colors.secondaryAccent)
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text("مناطق التوصيل ورسوم الشحن", fontWeight = FontWeight.ExtraBold, color = colors.textPrimary)
                         }
                         editableZones.forEachIndexed { idx, zone ->
@@ -390,17 +439,17 @@ fun AdminSettingsDialog(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp)),
-                    shape = RoundedCornerShape(20.dp),
+                        .border(1.dp, colors.cardBorder, RoundedCornerShape(22.dp)),
+                    shape = RoundedCornerShape(22.dp),
                     colors = CardDefaults.cardColors(containerColor = colors.secondarySurface)
                 ) {
                     Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(15.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
+                            SettingsSectionBadge(Icons.Default.Lock, colors.primaryBrand)
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text("تغيير الرقم السري للإدارة", fontWeight = FontWeight.Bold, color = colors.textPrimary)
                         }
                         Row(
@@ -445,23 +494,18 @@ fun AdminSettingsDialog(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, colors.profitGreen.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                        .border(1.dp, colors.profitGreen.copy(alpha = 0.4f), RoundedCornerShape(22.dp))
                         .testTag("whatsapp_settings_card"),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(22.dp),
                     colors = CardDefaults.cardColors(containerColor = colors.secondarySurface)
                 ) {
                     Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(15.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Chat,
-                                contentDescription = null,
-                                tint = Color(0xFF25D366),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            SettingsSectionBadge(Icons.Default.Chat, Color(0xFF25D366))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "إعدادات استقبال الطلبات عبر واتساب",
                                 style = MaterialTheme.typography.titleSmall,
@@ -520,26 +564,24 @@ fun AdminSettingsDialog(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, colors.cardBorder, RoundedCornerShape(20.dp))
+                        .border(1.dp, colors.cardBorder, RoundedCornerShape(22.dp))
                         .testTag("cloud_settings_card"),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(22.dp),
                     colors = CardDefaults.cardColors(containerColor = colors.secondarySurface)
                 ) {
                     Column(
-                        modifier = Modifier.padding(14.dp),
+                        modifier = Modifier.padding(15.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = if (cloudSyncState is CloudSyncState.Error) Icons.Default.CloudOff else Icons.Default.CloudDone,
-                                contentDescription = null,
-                                tint = if (cloudSyncState is CloudSyncState.Error) colors.primaryBrand else colors.profitGreen,
-                                modifier = Modifier.size(20.dp)
+                            SettingsSectionBadge(
+                                icon = if (cloudSyncState is CloudSyncState.Error) Icons.Default.CloudOff else Icons.Default.CloudDone,
+                                tint = if (cloudSyncState is CloudSyncState.Error) colors.primaryBrand else colors.profitGreen
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "إعدادات الربط السحابي",
                                 style = MaterialTheme.typography.titleSmall,
@@ -550,7 +592,7 @@ fun AdminSettingsDialog(
 
                         Surface(
                             color = if (cloudSyncState is CloudSyncState.Error) colors.primaryContainer else colors.profitContainer,
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(16.dp),
                             border = BorderStroke(
                                 1.dp,
                                 if (cloudSyncState is CloudSyncState.Error) colors.primaryBrand.copy(alpha = 0.35f) else colors.profitGreen.copy(alpha = 0.4f)
@@ -608,22 +650,22 @@ fun AdminSettingsDialog(
                     }
                 }
 
-                // In-App Remote Update Management Card (Firestore app_config/version)
+                // In-App Remote Update Management Card
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, colors.goldAccent.copy(alpha = 0.45f), RoundedCornerShape(20.dp))
+                        .border(1.dp, colors.goldAccent.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
                         .testTag("app_updates_settings_card"),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(22.dp),
                     colors = CardDefaults.cardColors(containerColor = colors.secondarySurface)
                 ) {
                     Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(15.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
+                            SettingsSectionBadge(Icons.Default.SystemUpdate, colors.goldAccent)
+                            Spacer(modifier = Modifier.width(8.dp))
                             Column {
                                 Text("إدارة تحديثات التطبيق", fontWeight = FontWeight.ExtraBold, color = colors.textPrimary)
                                 Text(
