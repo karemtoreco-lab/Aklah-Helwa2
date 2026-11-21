@@ -207,7 +207,6 @@ fun CustomerStorefrontScreen(
         }
     }
 
-    // Deduplicated active categories with items
     val activeCategories by remember(categories, items) {
         derivedStateOf {
             categories
@@ -382,9 +381,9 @@ fun CustomerStorefrontScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .shadow(
-                                elevation = 16.dp,
+                                elevation = 18.dp,
                                 shape = RoundedCornerShape(28.dp),
-                                spotColor = colors.primaryBrand.copy(alpha = 0.42f)
+                                spotColor = colors.primaryBrand.copy(alpha = 0.45f)
                             )
                             .clip(RoundedCornerShape(28.dp))
                             .background(colors.heroGradient)
@@ -392,9 +391,9 @@ fun CustomerStorefrontScreen(
                                 width = 1.2.dp,
                                 brush = Brush.linearGradient(
                                     listOf(
-                                        colors.goldAccent.copy(alpha = 0.78f),
-                                        Color.White.copy(alpha = 0.16f),
-                                        colors.goldAccent.copy(alpha = 0.45f)
+                                        colors.goldAccent.copy(alpha = 0.8f),
+                                        Color.White.copy(alpha = 0.2f),
+                                        colors.goldAccent.copy(alpha = 0.5f)
                                     )
                                 ),
                                 shape = RoundedCornerShape(28.dp)
@@ -416,7 +415,6 @@ fun CustomerStorefrontScreen(
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Discreet Admin Lock Trigger
                                     IconButton(
                                         onClick = { showAdminPinDialog = true },
                                         modifier = Modifier
@@ -441,7 +439,6 @@ fun CustomerStorefrontScreen(
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // "طلباتي" Order Tracking Button
                                     Surface(
                                         onClick = { showMyOrdersSheet = true },
                                         color = Color.White.copy(alpha = 0.18f),
@@ -469,7 +466,6 @@ fun CustomerStorefrontScreen(
                                         }
                                     }
 
-                                    // Info & Remote App Update Check Sheet Button
                                     IconButton(
                                         onClick = { showInfoAndUpdatesSheet = true },
                                         modifier = Modifier
@@ -498,13 +494,12 @@ fun CustomerStorefrontScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Upgraded Double-Ring Glowing Logo Frame
                                 Box(
                                     contentAlignment = Alignment.Center,
                                     modifier = Modifier
-                                        .size(74.dp)
+                                        .size(76.dp)
                                         .shadow(
-                                            elevation = 12.dp,
+                                            elevation = 14.dp,
                                             shape = CircleShape,
                                             spotColor = colors.goldAccent.copy(alpha = 0.65f)
                                         )
@@ -583,32 +578,39 @@ fun CustomerStorefrontScreen(
 
                 // Quick Search Bar right below Hero Header
                 item(key = "search_bar") {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text("ابحث عن أكلة أو تتبيلة أو صوص...", color = colors.textSecondary) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = colors.primaryBrand) },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "مسح", tint = colors.textSecondary)
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        shadowElevation = if (colors.isDark) 0.dp else 4.dp,
+                        color = Color.Transparent,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("ابحث عن أكلة أو تتبيلة أو صوص...", color = colors.textSecondary) },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = colors.primaryBrand) },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "مسح", tint = colors.textSecondary)
+                                    }
                                 }
-                            }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(18.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("customer_search_input"),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface,
-                            unfocusedContainerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface,
-                            focusedBorderColor = colors.primaryBrand,
-                            unfocusedBorderColor = if (colors.isDark) colors.glassBorder else colors.cardBorder,
-                            focusedTextColor = colors.textPrimary,
-                            unfocusedTextColor = colors.textPrimary
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("customer_search_input"),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface,
+                                unfocusedContainerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface,
+                                focusedBorderColor = colors.primaryBrand,
+                                unfocusedBorderColor = if (colors.isDark) colors.glassBorder else colors.cardBorder,
+                                focusedTextColor = colors.textPrimary,
+                                unfocusedTextColor = colors.textPrimary
+                            )
                         )
-                    )
+                    }
                 }
 
                 // Daily Offer Banner (editable by Admin)
@@ -621,7 +623,7 @@ fun CustomerStorefrontScreen(
                                 width = 1.dp,
                                 brush = Brush.linearGradient(
                                     listOf(
-                                        colors.goldAccent.copy(alpha = 0.78f),
+                                        colors.goldAccent.copy(alpha = 0.8f),
                                         colors.primaryBrand.copy(alpha = 0.45f)
                                     )
                                 )
@@ -636,7 +638,8 @@ fun CustomerStorefrontScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(36.dp)
+                                        .size(38.dp)
+                                        .shadow(4.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.35f))
                                         .clip(CircleShape)
                                         .background(colors.warmAccentGradient),
                                     contentAlignment = Alignment.Center
@@ -672,7 +675,7 @@ fun CustomerStorefrontScreen(
                                 onReorderLastOrder()
                             },
                             shape = RoundedCornerShape(50),
-                            border = BorderStroke(1.dp, colors.primaryBrand.copy(alpha = 0.55f)),
+                            border = BorderStroke(1.2.dp, colors.primaryBrand.copy(alpha = 0.6f)),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface
                             ),
@@ -695,7 +698,7 @@ fun CustomerStorefrontScreen(
                     }
                 }
 
-                // 2. Chef's Signature Carousel ("الأكثر طلباً") with Snap Fling Behavior
+                // 2. Chef's Signature Carousel ("الأكثر طلباً")
                 if (popularItems.isNotEmpty() && searchQuery.isBlank() && selectedFilterId == FILTER_ALL) {
                     item(key = "popular_showcase") {
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -714,12 +717,19 @@ fun CustomerStorefrontScreen(
                                         color = colors.textPrimary
                                     )
                                 }
-                                Text(
-                                    text = "توصيات الشيف",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = colors.goldAccent,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Surface(
+                                    color = colors.secondaryContainer,
+                                    shape = RoundedCornerShape(50),
+                                    border = BorderStroke(1.dp, colors.goldAccent.copy(alpha = 0.35f))
+                                ) {
+                                    Text(
+                                        text = "توصيات الشيف",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = colors.goldAccent,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                                    )
+                                }
                             }
 
                             LazyRow(
@@ -793,7 +803,7 @@ fun CustomerStorefrontScreen(
                     }
                 }
 
-                // 4. Interactive Menu Cards (responsive 2-col on wide screens, rich editorial cards on phones)
+                // 4. Interactive Menu Cards
                 if (filteredItems.isEmpty()) {
                     item(key = "empty_menu") {
                         Card(
@@ -948,7 +958,7 @@ fun CustomerStorefrontScreen(
                 }
             }
 
-            // 5. Floating Glassmorphic Cart Pill with subtle pulsing "إتمام الطلب" CTA
+            // 5. Floating Glassmorphic Cart Pill
             AnimatedVisibility(
                 visible = cartItems.isNotEmpty(),
                 enter = slideInVertically(
@@ -985,7 +995,7 @@ fun CustomerStorefrontScreen(
                 Surface(
                     color = if (colors.isDark) colors.floatingDock.copy(alpha = 0.96f) else colors.cardSurface.copy(alpha = 0.98f),
                     shape = RoundedCornerShape(50),
-                    shadowElevation = 20.dp,
+                    shadowElevation = 22.dp,
                     border = BorderStroke(
                         width = 1.5.dp,
                         brush = Brush.linearGradient(
@@ -1012,19 +1022,35 @@ fun CustomerStorefrontScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(colors.warmAccentGradient),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ShoppingBag,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                            Box(contentAlignment = Alignment.TopEnd) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .clip(CircleShape)
+                                        .background(colors.warmAccentGradient),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ShoppingBag,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Surface(
+                                    color = colors.goldAccent,
+                                    shape = CircleShape,
+                                    modifier = Modifier.size(18.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = cartLinesCount.toString(),
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = Color(0xFF1A1614)
+                                        )
+                                    }
+                                }
                             }
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
@@ -1053,7 +1079,7 @@ fun CustomerStorefrontScreen(
                             onClick = { showCheckoutDialog = true },
                             shape = RoundedCornerShape(50),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand),
-                            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
                             modifier = Modifier
                                 .defaultMinSize(minHeight = 48.dp)
                                 .graphicsLayer {
@@ -1135,7 +1161,7 @@ private fun ChefSignatureCard(
     val colors = AppTheme.colors
     Card(
         onClick = onCardClick,
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface
         ),
@@ -1148,9 +1174,9 @@ private fun ChefSignatureCard(
                 )
             )
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 5.dp),
         modifier = Modifier
-            .width(206.dp)
+            .width(210.dp)
             .wrapContentHeight()
             .testTag("popular_card_${menuItem.id}")
     ) {
@@ -1158,13 +1184,13 @@ private fun ChefSignatureCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(126.dp)
+                    .height(130.dp)
             ) {
                 DishPhotoCarousel(
                     photos = photos,
                     categoryName = categoryName,
                     itemName = menuItem.displayName,
-                    cornerRadius = 16.dp,
+                    cornerRadius = 18.dp,
                     fallbackIconSize = 34.dp,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -1278,7 +1304,7 @@ private fun GourmetCustomerMenuItemCard(
         colors.isDark -> Brush.linearGradient(
             listOf(
                 colors.glassBorder,
-                colors.goldAccent.copy(alpha = 0.22f),
+                colors.goldAccent.copy(alpha = 0.25f),
                 colors.glassBorder
             )
         )
@@ -1295,21 +1321,21 @@ private fun GourmetCustomerMenuItemCard(
             .border(
                 width = if (quantityInCart > 0.0) 1.6.dp else 1.dp,
                 brush = cardBorderBrush,
-                shape = RoundedCornerShape(22.dp)
+                shape = RoundedCornerShape(24.dp)
             )
             .testTag("customer_menu_item_${menuItem.id}"),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 5.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
-                Box(modifier = Modifier.size(104.dp)) {
+                Box(modifier = Modifier.size(106.dp)) {
                     DishPhotoCarousel(
                         photos = photos,
                         categoryName = categoryName,
@@ -1362,15 +1388,23 @@ private fun GourmetCustomerMenuItemCard(
                             modifier = Modifier.weight(1f)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Star, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(2.dp))
-                            Text(
-                                text = String.format(Locale.US, "%.1f", menuItem.ratingAvg),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = colors.goldAccent
-                            )
+                        Surface(
+                            color = colors.secondaryContainer,
+                            shape = RoundedCornerShape(50)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Star, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    text = String.format(Locale.US, "%.1f", menuItem.ratingAvg),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = colors.goldAccent
+                                )
+                            }
                         }
                     }
 
@@ -1528,7 +1562,7 @@ private fun CustomerAccountInfoSheet(
             )
             Surface(
                 color = colors.secondarySurface,
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(20.dp),
                 border = BorderStroke(1.dp, colors.cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -1668,12 +1702,12 @@ private fun CustomerCheckoutSheet(
             // Itemized Order Summary
             Surface(
                 color = colors.secondarySurface,
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(20.dp),
                 border = BorderStroke(1.dp, colors.cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier.padding(12.dp),
+                    modifier = Modifier.padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     cartItems.forEach { ci ->
