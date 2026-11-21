@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -51,6 +52,7 @@ import com.example.model.ProductEntity
 import com.example.ui.components.CulinaryPillChip
 import com.example.ui.components.bounceClick
 import com.example.ui.theme.AppTheme
+import com.example.util.DateUtils
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -93,6 +95,10 @@ fun ProductEditorDialog(
     var isActive by remember { mutableStateOf(initialProduct?.isActive ?: true) }
     var nameError by remember { mutableStateOf(false) }
 
+    val purchaseVal = (purchaseText.toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0)
+    val sellingVal = (sellingText.toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0)
+    val estimatedUnitProfit = (sellingVal - purchaseVal).coerceAtLeast(0.0)
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = colors.cardSurface,
@@ -118,7 +124,7 @@ fun ProductEditorDialog(
                     label = { Text("اسم الصنف *") },
                     isError = nameError,
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("product_name_input"),
@@ -153,7 +159,7 @@ fun ProductEditorDialog(
                         onValueChange = { unit = it },
                         label = { Text("الوحدة") },
                         singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = colors.secondarySurface,
@@ -170,7 +176,7 @@ fun ProductEditorDialog(
                         label = { Text("تكلفة الشراء") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier
                             .weight(1f)
                             .testTag("product_purchase_input"),
@@ -191,7 +197,7 @@ fun ProductEditorDialog(
                     label = { Text("سعر البيع الافتراضي (ج.م)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("product_selling_input"),
@@ -205,11 +211,42 @@ fun ProductEditorDialog(
                     )
                 )
 
+                if (sellingVal > 0.0) {
+                    Surface(
+                        color = colors.profitContainer,
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, colors.profitGreen.copy(alpha = 0.45f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = colors.profitGreen, modifier = Modifier.size(16.dp))
+                                Text(
+                                    text = " صافي ربح الوحدة المتوقع:",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.onProfitContainer
+                                )
+                            }
+                            Text(
+                                text = "+${DateUtils.formatCurrency(estimatedUnitProfit)}",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = colors.profitGreen
+                            )
+                        }
+                    }
+                }
+
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("وصف مختصر (اختياري)") },
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = colors.secondarySurface,
@@ -251,8 +288,8 @@ fun ProductEditorDialog(
                             selectedCategoryId,
                             unit,
                             description,
-                            (purchaseText.toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
-                            (sellingText.toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
+                            purchaseVal,
+                            sellingVal,
                             isActive
                         )
                     }
@@ -301,7 +338,7 @@ fun ManageCategoriesDialog(
                         onValueChange = { newCategoryName = it },
                         label = { Text(if (editingCat == null) "قسم جديد" else "تعديل القسم") },
                         singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = colors.secondarySurface,
