@@ -65,43 +65,43 @@ private fun rememberCategoryVisualStyle(categoryName: String, itemName: String):
         when {
             combined.contains("محاشي") || combined.contains("محشي") || combined.contains("ورق عنب") || combined.contains("كرنب") ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF1A4332), Color(0xFF2D6A4F), Color(0xFFD97B1C)),
+                    gradientColors = listOf(Color(0xFF163A2B), Color(0xFF285F47), Color(0xFFD97B1C)),
                     accentColor = Color(0xFFFFD166),
                     icon = Icons.Default.Spa
                 )
             combined.contains("قبل الحشو") || combined.contains("متقورة") || combined.contains("مقور") ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF3E311B), Color(0xFF8C5D19), Color(0xFFD9902B)),
+                    gradientColors = listOf(Color(0xFF3A2D18), Color(0xFF8C5D19), Color(0xFFD9902B)),
                     accentColor = Color(0xFFFFDE8A),
                     icon = Icons.Default.Restaurant
                 )
             combined.contains("خضار") || combined.contains("سبانخ") || combined.contains("فاصوليا") || combined.contains("بامية") || combined.contains("بسلة") ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF103E2E), Color(0xFF1B6E4E), Color(0xFF4CA456)),
+                    gradientColors = listOf(Color(0xFF0E3829), Color(0xFF19684A), Color(0xFF4CA456)),
                     accentColor = Color(0xFFA7F3D0),
                     icon = Icons.Default.Eco
                 )
             combined.contains("تتبيلات") || combined.contains("بانيه") || combined.contains("استربس") || combined.contains("شيش") || combined.contains("شاورما") || combined.contains("كفتة") || combined.contains("حواوشي") ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF4A180E), Color(0xFFA63612), Color(0xFFFF8C24)),
+                    gradientColors = listOf(Color(0xFF46160C), Color(0xFFA63612), Color(0xFFFF8A1E)),
                     accentColor = Color(0xFFFFD580),
                     icon = Icons.Default.LocalFireDepartment
                 )
             combined.contains("فراخ") || combined.contains("دباس") || combined.contains("وراك") || combined.contains("أجنحة") ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF49290C), Color(0xFF9E5614), Color(0xFFEFA133)),
+                    gradientColors = listOf(Color(0xFF45250A), Color(0xFF9E5614), Color(0xFFEFA133)),
                     accentColor = Color(0xFFFFECC2),
                     icon = Icons.Default.SetMeal
                 )
             combined.contains("صلصات") || combined.contains("صلصة") || combined.contains("تسيكة") ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF4F1319), Color(0xFF991F28), Color(0xFFE05232)),
+                    gradientColors = listOf(Color(0xFF4A1117), Color(0xFF991F28), Color(0xFFE05232)),
                     accentColor = Color(0xFFFFC8A2),
                     icon = Icons.Default.SoupKitchen
                 )
             else ->
                 CategoryVisualStyle(
-                    gradientColors = listOf(Color(0xFF232936), Color(0xFF6B3410), Color(0xFFE65100)),
+                    gradientColors = listOf(Color(0xFF231D18), Color(0xFF6B3410), Color(0xFFE05300)),
                     accentColor = Color(0xFFFFD180),
                     icon = Icons.Default.Restaurant
                 )
@@ -109,9 +109,6 @@ private fun rememberCategoryVisualStyle(categoryName: String, itemName: String):
     }
 }
 
-/**
- * Rich Category-Tailored Default Dish Illustration used strictly when no real photo is available.
- */
 @Composable
 fun CategoryDishArtwork(
     categoryName: String,
@@ -131,28 +128,28 @@ fun CategoryDishArtwork(
             val minDim = size.minDimension
             drawCircle(
                 color = Color.White.copy(alpha = 0.08f),
-                radius = minDim * 0.42f,
+                radius = minDim * 0.44f,
                 center = Offset(cx, cy),
                 style = Stroke(width = 2.dp.toPx())
             )
             drawCircle(
-                color = style.accentColor.copy(alpha = 0.22f),
-                radius = minDim * 0.31f,
+                color = style.accentColor.copy(alpha = 0.25f),
+                radius = minDim * 0.32f,
                 center = Offset(cx, cy),
                 style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round)
             )
             drawCircle(
-                color = Color.White.copy(alpha = 0.05f),
-                radius = minDim * 0.24f,
-                center = Offset(size.width * 0.18f, size.height * 0.18f)
+                color = Color.White.copy(alpha = 0.06f),
+                radius = minDim * 0.26f,
+                center = Offset(size.width * 0.16f, size.height * 0.16f)
             )
         }
         Surface(
-            color = Color.Black.copy(alpha = 0.28f),
+            color = Color.Black.copy(alpha = 0.30f),
             shape = CircleShape,
             modifier = Modifier
-                .size(iconSize * 1.48f)
-                .border(1.dp, style.accentColor.copy(alpha = 0.45f), CircleShape)
+                .size(iconSize * 1.52f)
+                .border(1.2.dp, style.accentColor.copy(alpha = 0.5f), CircleShape)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
@@ -166,12 +163,6 @@ fun CategoryDishArtwork(
     }
 }
 
-/**
- * Unified Smart Dish Image renderer:
- * - Decodes `"data:image/..."` or Base64 strings into a cached [ImageBitmap] (`ContentScale.Crop`).
- * - Loads `http://`, `https://`, or internal file paths via Coil [AsyncImage].
- * - Displays the category-tailored [CategoryDishArtwork] ONLY when the image source is empty or fails to load.
- */
 @Composable
 fun SmartDishImage(
     imageSource: String?,
@@ -258,10 +249,6 @@ fun SmartDishImage(
     }
 }
 
-/**
- * Displays either a category-tailored gourmet visual when [photos] is empty,
- * or a swipeable HorizontalPager (1–3 photos) backed by [SmartDishImage] with page indicator dots.
- */
 @Composable
 fun DishPhotoCarousel(
     photos: List<String>,
@@ -314,8 +301,8 @@ fun DishPhotoCarousel(
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 8.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(Color.Black.copy(alpha = 0.52f))
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                    .background(Color.Black.copy(alpha = 0.56f))
+                    .padding(horizontal = 9.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
