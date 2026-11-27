@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.ShoppingBag
@@ -50,6 +51,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -95,7 +97,9 @@ fun OrderFormDialog(
         orderDate: Long,
         status: String,
         paymentStatus: String,
-        notes: String
+        notes: String,
+        extraPrepCost: Double,
+        extraPrepNotes: String
     ) -> Unit
 ) {
     val colors = AppTheme.colors
@@ -106,13 +110,25 @@ fun OrderFormDialog(
     var status by remember { mutableStateOf(initialOrder?.status ?: OrderStatus.DELIVERED.name) }
     var paymentStatus by remember { mutableStateOf(initialOrder?.paymentStatus ?: PaymentStatus.PAID.name) }
     var notes by remember { mutableStateOf(initialOrder?.notes ?: "") }
+    var extraPrepCostText by remember(initialOrder) {
+        mutableStateOf(
+            initialOrder?.extraPrepCost?.takeIf { it > 0.0 }
+                ?.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() }
+                ?: ""
+        )
+    }
+    var extraPrepNotes by remember(initialOrder) {
+        mutableStateOf(initialOrder?.extraPrepNotes ?: "")
+    }
 
     var showProductPicker by remember { mutableStateOf(false) }
     var showCustomItemDialog by remember { mutableStateOf(false) }
     var nameError by remember { mutableStateOf(false) }
     var itemsError by remember { mutableStateOf(false) }
 
-    val totalPurchase = lineItems.sumOf { it.totalPurchaseCost }
+    val itemsPurchase = lineItems.sumOf { it.totalPurchaseCost }
+    val extraPrepCost = (extraPrepCostText.toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0)
+    val totalPurchase = itemsPurchase + extraPrepCost
     val totalSelling = lineItems.sumOf { it.totalSellingPrice }
     val grossProfit = totalSelling - totalPurchase
 
@@ -136,7 +152,8 @@ fun OrderFormDialog(
                         unitLabel = product.unit,
                         quantity = 1.0,
                         unitPurchaseCost = product.purchaseCost,
-                        unitSellingPrice = product.defaultSellingPrice
+                        unitSellingPrice = product.defaultSellingPrice,
+                        isTotalCostForWholeQty = true
                     )
                 }
                 itemsError = false
@@ -148,7 +165,7 @@ fun OrderFormDialog(
 
     if (showCustomItemDialog) {
         CustomOrderItemDialog(
-            onAdd = { name, qty, purchase, selling ->
+            onAdd = { name, qty, purchase, selling, isTotalCost ->
                 lineItems = lineItems + DraftOrderLineItem(
                     productId = null,
                     productNameSnapshot = name,
@@ -156,7 +173,8 @@ fun OrderFormDialog(
                     unitLabel = "طلب",
                     quantity = qty,
                     unitPurchaseCost = purchase,
-                    unitSellingPrice = selling
+                    unitSellingPrice = selling,
+                    isTotalCostForWholeQty = isTotalCost
                 )
                 itemsError = false
                 showCustomItemDialog = false
@@ -210,7 +228,7 @@ fun OrderFormDialog(
                                 Icon(
                                     imageVector = if (initialOrder == null) Icons.Default.Add else Icons.Default.Restaurant,
                                     contentDescription = null,
-                                    tint = Color.White,
+                                    tint = colors.onAccentText,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
@@ -332,9 +350,9 @@ fun OrderFormDialog(
                                 .bounceClick()
                                 .testTag("open_product_picker_btn")
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Add, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("إضافة صنف", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("إضافة صنف", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.onAccentText)
                         }
                     }
                 }
@@ -385,6 +403,96 @@ fun OrderFormDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
+                // Extra Prep / Auxiliary Materials Cost Section
+                Surface(
+                    color = colors.secondarySurface,
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(1.dp, colors.cardBorder),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("extra_prep_cost_section")
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(colors.secondaryContainer)
+                                    .border(1.dp, colors.goldAccent.copy(alpha = 0.3f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ReceiptLong,
+                                    contentDescription = null,
+                                    tint = colors.goldText,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "تكاليف تجهيز إضافية / خامات مساعدة",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = colors.textPrimary
+                                )
+                                Text(
+                                    text = "مثل: خضرة، صلصة، أرز، توابل، تغليف (تُجمع مع التكلفة)",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colors.textSecondary
+                                )
+                            }
+                        }
+
+                        OutlinedTextField(
+                            value = extraPrepCostText,
+                            onValueChange = { extraPrepCostText = it },
+                            label = { Text("قيمة التكاليف الإضافية (ج.م)") },
+                            placeholder = { Text("0", color = colors.textSecondary) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("extra_prep_cost_input"),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = colors.cardSurface,
+                                unfocusedContainerColor = colors.cardSurface,
+                                focusedBorderColor = colors.goldAccent,
+                                unfocusedBorderColor = colors.cardBorder,
+                                focusedTextColor = colors.textPrimary,
+                                unfocusedTextColor = colors.textPrimary
+                            )
+                        )
+
+                        OutlinedTextField(
+                            value = extraPrepNotes,
+                            onValueChange = { extraPrepNotes = it },
+                            label = { Text("ملاحظة توضيحية للخامات (اختياري)") },
+                            placeholder = { Text("مثال: خضرة + صلصة + أرز + علب تغليف", color = colors.textSecondary) },
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("extra_prep_notes_input"),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = colors.cardSurface,
+                                unfocusedContainerColor = colors.cardSurface,
+                                focusedBorderColor = colors.primaryBrand,
+                                unfocusedBorderColor = colors.cardBorder,
+                                focusedTextColor = colors.textPrimary,
+                                unfocusedTextColor = colors.textPrimary
+                            )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -394,14 +502,18 @@ fun OrderFormDialog(
                     colors = CardDefaults.cardColors(containerColor = colors.profitContainer.copy(alpha = 0.78f))
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
-                        SummaryRow("إجمالي تكلفة الشراء:", DateUtils.formatCurrencyWithDecimal(totalPurchase), colors.textSecondary)
+                        SummaryRow("تكلفة شراء الأصناف:", DateUtils.formatCurrencyWithDecimal(itemsPurchase), colors.textSecondary)
+                        Spacer(modifier = Modifier.height(5.dp))
+                        SummaryRow("تكاليف تجهيز وخامات مساعدة:", DateUtils.formatCurrencyWithDecimal(extraPrepCost), colors.goldText)
+                        Spacer(modifier = Modifier.height(5.dp))
+                        SummaryRow("إجمالي التكلفة الكلية:", DateUtils.formatCurrencyWithDecimal(totalPurchase), colors.textPrimary)
                         Spacer(modifier = Modifier.height(6.dp))
                         SummaryRow("إجمالي البيع للعميل:", DateUtils.formatCurrencyWithDecimal(totalSelling), colors.primaryBrand)
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = colors.cardBorder)
                         SummaryRow(
-                            "إجمالي ربح الأوردر (قبل المصاريف):",
+                            "صافي ربح الأوردر:",
                             DateUtils.formatCurrencyWithDecimal(grossProfit),
-                            if (grossProfit >= 0) colors.profitGreen else colors.primaryBrand,
+                            if (grossProfit >= 0) colors.profitGreen else colors.errorRed,
                             isLarge = true
                         )
                     }
@@ -492,7 +604,9 @@ fun OrderFormDialog(
                                     orderDate,
                                     status,
                                     paymentStatus,
-                                    notes
+                                    notes,
+                                    extraPrepCost,
+                                    extraPrepNotes
                                 )
                             }
                         }
@@ -501,11 +615,11 @@ fun OrderFormDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Save, contentDescription = null, tint = Color.White)
+                        Icon(Icons.Default.Save, contentDescription = null, tint = colors.onAccentText)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = if (initialOrder == null) "حفظ الأوردر" else "حفظ التعديلات",
-                            color = Color.White,
+                            color = colors.onAccentText,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 15.sp
                         )
@@ -596,6 +710,64 @@ private fun OrderLineItemEditorCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
+            // Cost calculation mode toggle: Batch/Total Cost (default) vs Per-Unit Cost
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("cost_mode_toggle_${item.productId ?: item.tempId}"),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Surface(
+                    onClick = { onUpdate(item.copy(isTotalCostForWholeQty = true)) },
+                    color = if (item.isTotalCostForWholeQty) colors.primaryContainer else colors.cardSurface,
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(
+                        1.dp,
+                        if (item.isTotalCostForWholeQty) colors.primaryBrand else colors.cardBorder
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .minimumInteractiveComponentSize()
+                        .bounceClick()
+                ) {
+                    Text(
+                        text = "تكلفة إجمالية للصنف",
+                        fontSize = 11.sp,
+                        fontWeight = if (item.isTotalCostForWholeQty) FontWeight.ExtraBold else FontWeight.Medium,
+                        color = if (item.isTotalCostForWholeQty) colors.onPrimaryContainer else colors.textSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                    )
+                }
+
+                Surface(
+                    onClick = { onUpdate(item.copy(isTotalCostForWholeQty = false)) },
+                    color = if (!item.isTotalCostForWholeQty) colors.secondaryContainer else colors.cardSurface,
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(
+                        1.dp,
+                        if (!item.isTotalCostForWholeQty) colors.goldAccent else colors.cardBorder
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .minimumInteractiveComponentSize()
+                        .bounceClick()
+                ) {
+                    Text(
+                        text = "تكلفة للوحدة × الكمية",
+                        fontSize = 11.sp,
+                        fontWeight = if (!item.isTotalCostForWholeQty) FontWeight.ExtraBold else FontWeight.Medium,
+                        color = if (!item.isTotalCostForWholeQty) colors.goldText else colors.textSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -607,7 +779,16 @@ private fun OrderLineItemEditorCard(
                         val v = raw.toDoubleOrNull() ?: 0.0
                         onUpdate(item.copy(unitPurchaseCost = v.coerceAtLeast(0.0)))
                     },
-                    label = { Text("تكلفة الشراء / وحدة", fontSize = 11.sp) },
+                    label = {
+                        Text(
+                            text = if (item.isTotalCostForWholeQty) {
+                                "تكلفة الشراء (إجمالي الصنف)"
+                            } else {
+                                "تكلفة الشراء / ${item.unitLabel}"
+                            },
+                            fontSize = 11.sp
+                        )
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier
@@ -631,7 +812,7 @@ private fun OrderLineItemEditorCard(
                         val v = raw.toDoubleOrNull() ?: 0.0
                         onUpdate(item.copy(unitSellingPrice = v.coerceAtLeast(0.0)))
                     },
-                    label = { Text("سعر البيع / وحدة", fontSize = 11.sp) },
+                    label = { Text("سعر البيع / ${item.unitLabel}", fontSize = 11.sp) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier
@@ -648,6 +829,18 @@ private fun OrderLineItemEditorCard(
                     )
                 )
             }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = if (item.isTotalCostForWholeQty) {
+                    "تكلفة ثابتة للكمية كلها (${DateUtils.formatCurrencyWithDecimal(item.totalPurchaseCost)}) • البيع = $qtyLabel × ${DateUtils.formatCurrencyWithDecimal(item.unitSellingPrice)}"
+                } else {
+                    "التكلفة = $qtyLabel × ${DateUtils.formatCurrencyWithDecimal(item.unitPurchaseCost)} • البيع = $qtyLabel × ${DateUtils.formatCurrencyWithDecimal(item.unitSellingPrice)}"
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.textSecondary
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -710,7 +903,7 @@ private fun SummaryRow(label: String, value: String, valueColor: Color, isLarge:
 
 @Composable
 private fun CustomOrderItemDialog(
-    onAdd: (name: String, qty: Double, purchase: Double, selling: Double) -> Unit,
+    onAdd: (name: String, qty: Double, purchase: Double, selling: Double, isTotalCost: Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
     val colors = AppTheme.colors
@@ -718,6 +911,7 @@ private fun CustomOrderItemDialog(
     var qtyText by remember { mutableStateOf("1") }
     var purchaseText by remember { mutableStateOf("0") }
     var sellingText by remember { mutableStateOf("") }
+    var isTotalCost by remember { mutableStateOf(true) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -759,10 +953,45 @@ private fun CustomOrderItemDialog(
                         unfocusedTextColor = colors.textPrimary
                     )
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Surface(
+                        onClick = { isTotalCost = true },
+                        color = if (isTotalCost) colors.primaryContainer else colors.secondarySurface,
+                        shape = RoundedCornerShape(50),
+                        border = BorderStroke(1.dp, if (isTotalCost) colors.primaryBrand else colors.cardBorder),
+                        modifier = Modifier.weight(1f).minimumInteractiveComponentSize()
+                    ) {
+                        Text(
+                            text = "تكلفة إجمالية",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isTotalCost) colors.onPrimaryContainer else colors.textSecondary,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                        )
+                    }
+                    Surface(
+                        onClick = { isTotalCost = false },
+                        color = if (!isTotalCost) colors.secondaryContainer else colors.secondarySurface,
+                        shape = RoundedCornerShape(50),
+                        border = BorderStroke(1.dp, if (!isTotalCost) colors.goldAccent else colors.cardBorder),
+                        modifier = Modifier.weight(1f).minimumInteractiveComponentSize()
+                    ) {
+                        Text(
+                            text = "تكلفة للوحدة",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (!isTotalCost) colors.goldText else colors.textSecondary,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                        )
+                    }
+                }
                 OutlinedTextField(
                     value = purchaseText,
                     onValueChange = { purchaseText = it },
-                    label = { Text("تكلفة الشراء للوحدة") },
+                    label = { Text(if (isTotalCost) "تكلفة الشراء الإجمالية للصنف" else "تكلفة الشراء للوحدة") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
@@ -803,7 +1032,8 @@ private fun CustomOrderItemDialog(
                             name.trim(),
                             (qtyText.toDoubleOrNull() ?: 1.0).coerceAtLeast(0.1),
                             (purchaseText.toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
-                            (sellingText.toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0)
+                            (sellingText.toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
+                            isTotalCost
                         )
                     }
                 },
@@ -811,7 +1041,7 @@ private fun CustomOrderItemDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand),
                 modifier = Modifier.defaultMinSize(minHeight = 48.dp).bounceClick()
             ) {
-                Text("إضافة", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("إضافة", color = colors.onAccentText, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

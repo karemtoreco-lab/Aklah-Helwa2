@@ -191,7 +191,7 @@ fun ProductCatalogScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand)
                 ) {
-                    Text("حذف", color = Color.White)
+                    Text("حذف", color = colors.onAccentText)
                 }
             },
             dismissButton = {
@@ -331,9 +331,9 @@ fun ProductCatalogScreen(
                             shape = RoundedCornerShape(50),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Add, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("صنف جديد", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("صنف جديد", color = colors.onAccentText, fontWeight = FontWeight.Bold)
                         }
 
                         OutlinedButton(
@@ -421,7 +421,7 @@ fun ProductCatalogScreen(
                                                     } else "حسب السعر",
                                                     style = MaterialTheme.typography.labelSmall,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
+                                                    color = colors.onAccentText,
                                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
                                                 )
                                             }
@@ -480,9 +480,9 @@ fun ProductCatalogScreen(
                                             )
                                         }
                                     ) {
-                                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = colors.goldText, modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("إضافة صورة", fontSize = 12.sp, color = colors.goldAccent, fontWeight = FontWeight.Bold)
+                                        Text("إضافة صورة", fontSize = 12.sp, color = colors.goldText, fontWeight = FontWeight.Bold)
                                     }
                                     TextButton(
                                         onClick = {
@@ -563,9 +563,9 @@ fun ProductCatalogScreen(
                                             .defaultMinSize(minHeight = 48.dp)
                                             .bounceClick()
                                     ) {
-                                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("رفع صور", color = Color.White, fontSize = 12.sp)
+                                        Text("رفع صور", color = colors.onAccentText, fontSize = 12.sp)
                                     }
                                 }
 
@@ -675,7 +675,7 @@ fun SegmentedTabButton(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (selected) Color.White else colors.textSecondary,
+                tint = if (selected) colors.onAccentText else colors.textSecondary,
                 modifier = Modifier.size(17.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
@@ -683,7 +683,7 @@ fun SegmentedTabButton(
                 text = title,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) Color.White else colors.textSecondary,
+                color = if (selected) colors.onAccentText else colors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

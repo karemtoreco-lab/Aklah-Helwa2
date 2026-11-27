@@ -151,9 +151,9 @@ fun MenuPreviewSection(
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand)
             ) {
-                Icon(Icons.Default.Download, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Download, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("تصدير PNG", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("تصدير PNG", color = colors.onAccentText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
 
             Button(
@@ -167,11 +167,11 @@ fun MenuPreviewSection(
                 modifier = Modifier
                     .weight(1.2f)
                     .defaultMinSize(minHeight = 48.dp)
-                    .shadow(6.dp, RoundedCornerShape(50), spotColor = Color(0xFF25D366).copy(alpha = 0.35f))
+                    .shadow(6.dp, RoundedCornerShape(50), spotColor = colors.profitGreen.copy(alpha = 0.35f))
                     .bounceClick()
                     .testTag("share_menu_whatsapp_btn"),
                 shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))
+                colors = ButtonDefaults.buttonColors(containerColor = colors.profitGreen)
             ) {
                 Icon(Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(4.dp))
@@ -305,7 +305,7 @@ fun MenuPreviewSection(
                             IconButton(
                                 onClick = { ImageStorageUtils.sharePngFile(context, export.filePath) }
                             ) {
-                                Icon(Icons.Default.Share, contentDescription = "مشاركة", tint = Color(0xFF25D366))
+                                Icon(Icons.Default.Share, contentDescription = "مشاركة", tint = colors.profitGreen)
                             }
                             IconButton(
                                 onClick = { onDeleteGeneratedMenu(export) }

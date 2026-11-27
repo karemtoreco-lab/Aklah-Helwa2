@@ -36,15 +36,20 @@ class BusinessRepository(
     }
 
     // Categories
+    suspend fun getAllCategoriesOnce(): List<CategoryEntity> = catalogDao.getAllCategoriesOnce()
+    suspend fun getCategoryByIdOnce(id: Long): CategoryEntity? = catalogDao.getCategoryByIdOnce(id)
     suspend fun insertCategory(category: CategoryEntity): Long = catalogDao.insertCategory(category)
     suspend fun updateCategory(category: CategoryEntity) = catalogDao.updateCategory(category)
     suspend fun deleteCategory(category: CategoryEntity) = catalogDao.deleteCategory(category)
+    suspend fun deleteCategoryById(id: Long) = catalogDao.deleteCategoryById(id)
 
     // Products
     suspend fun getAllProductsOnce(): List<ProductEntity> = catalogDao.getAllProductsOnce()
+    suspend fun getProductByIdOnce(id: Long): ProductEntity? = catalogDao.getProductByIdOnce(id)
     suspend fun insertProduct(product: ProductEntity): Long = catalogDao.insertProduct(product)
     suspend fun updateProduct(product: ProductEntity) = catalogDao.updateProduct(product)
     suspend fun deleteProduct(product: ProductEntity) = catalogDao.deleteProduct(product)
+    suspend fun deleteProductById(id: Long) = catalogDao.deleteProductById(id)
 
     // Product Images
     suspend fun insertProductImage(image: ProductImageEntity): Long {
@@ -71,6 +76,8 @@ class BusinessRepository(
     }
 
     // Independent / Cloud-Unified Menu
+    suspend fun getAllMenuCategoriesOnce(): List<MenuCategoryEntity> = menuDao.getAllMenuCategoriesOnce()
+    suspend fun getMenuCategoryByIdOnce(id: Long): MenuCategoryEntity? = menuDao.getMenuCategoryByIdOnce(id)
     suspend fun getAllMenuItemsOnce(): List<MenuItemEntity> = menuDao.getAllMenuItemsOnce()
     suspend fun getMenuItemByIdOnce(id: Long): MenuItemEntity? = menuDao.getMenuItemByIdOnce(id)
     suspend fun getMenuItemByProductIdOnce(productId: Long): MenuItemEntity? = menuDao.getMenuItemByProductIdOnce(productId)
@@ -87,6 +94,9 @@ class BusinessRepository(
     suspend fun deleteMenuCategory(category: MenuCategoryEntity) =
         menuDao.deleteMenuCategory(category)
 
+    suspend fun deleteMenuCategoryById(id: Long) =
+        menuDao.deleteMenuCategoryById(id)
+
     suspend fun insertMenuItem(item: MenuItemEntity): Long =
         menuDao.insertMenuItem(item)
 
@@ -98,6 +108,9 @@ class BusinessRepository(
 
     suspend fun deleteMenuItem(item: MenuItemEntity) =
         menuDao.deleteMenuItem(item)
+
+    suspend fun deleteMenuItemById(id: Long) =
+        menuDao.deleteMenuItemById(id)
 
     // Generated Menu Exports
     suspend fun insertGeneratedMenu(export: GeneratedMenuEntity): Long =

@@ -14,9 +14,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -234,7 +237,9 @@ fun AklehHelwaApp(
     AnimatedContent(
         targetState = appStage,
         transitionSpec = {
-            fadeIn(animationSpec = tween(260)) togetherWith fadeOut(animationSpec = tween(200))
+            (fadeIn(animationSpec = tween(280, easing = FastOutSlowInEasing)) +
+                scaleIn(initialScale = 0.985f, animationSpec = spring(dampingRatio = 0.85f))) togetherWith
+                fadeOut(animationSpec = tween(200))
         },
         label = "app_stage_transition"
     ) { stage ->
@@ -451,7 +456,7 @@ private fun AdminPanelScaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             Column(modifier = Modifier.background(colors.cardSurface).statusBarsPadding()) {
-                CheckeredRibbon(height = 4.dp, squareSize = 4.dp)
+                CheckeredRibbon(height = 3.dp, squareSize = 4.dp)
                 TopAppBar(
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("app_header")) {
@@ -461,9 +466,9 @@ private fun AdminPanelScaffold(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .shadow(4.dp, CircleShape, spotColor = colors.primaryBrand)
+                                    .shadow(4.dp, CircleShape, spotColor = colors.goldAccent.copy(alpha = 0.45f))
                                     .clip(CircleShape)
-                                    .border(1.5.dp, colors.primaryBrand, CircleShape)
+                                    .border(1.5.dp, colors.goldAccent, CircleShape)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Column {
@@ -478,7 +483,8 @@ private fun AdminPanelScaffold(
                                 Text(
                                     text = "إدارة أ/ نهى ماهر",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = colors.textSecondary,
+                                    color = colors.goldText,
+                                    fontWeight = FontWeight.SemiBold,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -487,17 +493,17 @@ private fun AdminPanelScaffold(
                     },
                     actions = {
                         Surface(
-                            color = colors.primaryContainer,
+                            color = colors.secondaryContainer,
                             shape = RoundedCornerShape(50),
-                            border = BorderStroke(1.dp, colors.primaryBrand.copy(alpha = 0.35f)),
+                            border = BorderStroke(1.dp, colors.goldAccent.copy(alpha = 0.45f)),
                             modifier = Modifier.testTag("header_month_chip")
                         ) {
                             Text(
                                 text = DateUtils.formatYearMonthArabic(selectedYearMonth),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = colors.onPrimaryContainer,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                color = colors.goldText,
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(4.dp))
@@ -513,7 +519,7 @@ private fun AdminPanelScaffold(
                             Icon(
                                 imageVector = Icons.Default.Storefront,
                                 contentDescription = "العودة لواجهة العملاء",
-                                tint = colors.goldAccent,
+                                tint = colors.goldText,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -524,7 +530,10 @@ private fun AdminPanelScaffold(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         IconButton(
-                            onClick = { showSettingsDialog = true },
+                            onClick = {
+                                viewModel.clearForceResyncFeedback()
+                                showSettingsDialog = true
+                            },
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(CircleShape)
@@ -553,14 +562,14 @@ private fun AdminPanelScaffold(
             if (currentTab == AppTab.DASHBOARD || currentTab == AppTab.ORDERS) {
                 ExtendedFloatingActionButton(
                     onClick = { viewModel.openAddOrderDialog() },
-                    icon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
-                    text = { Text("أوردر جديد", fontWeight = FontWeight.ExtraBold, color = Color.White) },
+                    icon = { Icon(Icons.Default.Add, contentDescription = null, tint = colors.onAccentText) },
+                    text = { Text("أوردر جديد", fontWeight = FontWeight.ExtraBold, color = colors.onAccentText) },
                     modifier = Modifier
-                        .shadow(10.dp, RoundedCornerShape(50), spotColor = colors.primaryBrand.copy(alpha = 0.5f))
+                        .shadow(10.dp, RoundedCornerShape(50), spotColor = colors.primaryBrand.copy(alpha = 0.35f))
                         .bounceClick()
                         .testTag("fab_add_order"),
                     containerColor = colors.primaryBrand,
-                    contentColor = Color.White,
+                    contentColor = colors.onAccentText,
                     shape = RoundedCornerShape(50)
                 )
             }
@@ -577,17 +586,20 @@ private fun AdminPanelScaffold(
                 transitionSpec = {
                     val forward = targetState.ordinal > initialState.ordinal
                     val enterOffset: (Int) -> Int = { fullWidth ->
-                        if (forward) -fullWidth / 4 else fullWidth / 4
+                        if (forward) -fullWidth / 5 else fullWidth / 5
                     }
                     val exitOffset: (Int) -> Int = { fullWidth ->
-                        if (forward) fullWidth / 6 else -fullWidth / 6
+                        if (forward) fullWidth / 7 else -fullWidth / 7
                     }
                     (slideInHorizontally(
-                        animationSpec = tween(250, easing = FastOutSlowInEasing),
+                        animationSpec = spring(
+                            dampingRatio = 0.86f,
+                            stiffness = Spring.StiffnessMediumLow
+                        ),
                         initialOffsetX = enterOffset
-                    ) + fadeIn(animationSpec = tween(220))) togetherWith
+                    ) + fadeIn(animationSpec = tween(240, easing = FastOutSlowInEasing))) togetherWith
                         (slideOutHorizontally(
-                            animationSpec = tween(200, easing = FastOutSlowInEasing),
+                            animationSpec = tween(190, easing = FastOutSlowInEasing),
                             targetOffsetX = exitOffset
                         ) + fadeOut(animationSpec = tween(160)))
                 },
@@ -610,7 +622,10 @@ private fun AdminPanelScaffold(
                             onNavigateToAnalytics = { viewModel.setTab(AppTab.MONTHLY_STATS) },
                             onOpenAddOrderDialog = { viewModel.openAddOrderDialog() },
                             onOrderClick = { viewModel.showOrderDetails(it) },
-                            onCheckForUpdates = { viewModel.checkForUpdatesManually() }
+                            onCheckForUpdates = { viewModel.checkForUpdatesManually() },
+                            cloudSyncState = cloudSyncState,
+                            onToggleOrderStatus = { viewModel.toggleOrderStatus(it) },
+                            onDeleteAppUser = { viewModel.deleteAppUser(it) }
                         )
                     }
 
@@ -718,6 +733,8 @@ private fun AdminPanelScaffold(
 
     if (showSettingsDialog) {
         val currentVersionConfig by viewModel.appVersionConfig.collectAsStateWithLifecycle()
+        val isForceResyncing by viewModel.isForceResyncing.collectAsStateWithLifecycle()
+        val forceResyncFeedback by viewModel.forceResyncFeedback.collectAsStateWithLifecycle()
         AdminSettingsDialog(
             isDarkMode = isDarkMode,
             currentPin = adminPin,
@@ -727,6 +744,9 @@ private fun AdminPanelScaffold(
             appVersionConfig = currentVersionConfig,
             cloudConfig = cloudConfig,
             cloudSyncState = cloudSyncState,
+            appUsers = cloudAppUsers,
+            isForceResyncing = isForceResyncing,
+            forceResyncFeedback = forceResyncFeedback,
             onToggleTheme = { viewModel.toggleDarkMode() },
             onUpdatePin = { viewModel.updateAdminPin(it) },
             onUpdateWhatsAppNumber = { viewModel.updateAdminWhatsAppNumber(it) },
@@ -736,8 +756,13 @@ private fun AdminPanelScaffold(
                 viewModel.publishAppVersionConfig(code, name, url, notes, mandatory)
             },
             onSyncMenuNow = { viewModel.syncPublishedMenuToCloudNow() },
+            onForceResyncNow = { viewModel.forceFullResyncFromCloud() },
+            onDeleteAppUser = { viewModel.deleteAppUser(it) },
             onReturnToCustomerStorefront = { viewModel.returnToCustomerStorefront() },
-            onDismiss = { showSettingsDialog = false }
+            onDismiss = {
+                viewModel.clearForceResyncFeedback()
+                showSettingsDialog = false
+            }
         )
     }
 
@@ -749,7 +774,7 @@ private fun AdminPanelScaffold(
             products = products,
             primaryImages = primaryImagesMap,
             onDismiss = { viewModel.closeOrderDialog() },
-            onSaveOrder = { id, name, phone, lineItems, date, status, payment, notes ->
+            onSaveOrder = { id, name, phone, lineItems, date, status, payment, notes, extraPrepCost, extraPrepNotes ->
                 viewModel.saveMultiProductOrder(
                     id = id,
                     customerName = name,
@@ -758,7 +783,9 @@ private fun AdminPanelScaffold(
                     orderDate = date,
                     status = status,
                     paymentStatus = payment,
-                    notes = notes
+                    notes = notes,
+                    extraPrepCost = extraPrepCost,
+                    extraPrepNotes = extraPrepNotes
                 )
             }
         )

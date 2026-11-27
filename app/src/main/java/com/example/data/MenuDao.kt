@@ -20,6 +20,9 @@ interface MenuDao {
     @Query("SELECT * FROM menu_categories ORDER BY sortOrder ASC, id ASC")
     suspend fun getAllMenuCategoriesOnce(): List<MenuCategoryEntity>
 
+    @Query("SELECT * FROM menu_categories WHERE id = :id LIMIT 1")
+    suspend fun getMenuCategoryByIdOnce(id: Long): MenuCategoryEntity?
+
     @Query("SELECT COUNT(*) FROM menu_categories")
     suspend fun getMenuCategoryCount(): Int
 
@@ -34,6 +37,9 @@ interface MenuDao {
 
     @Delete
     suspend fun deleteMenuCategory(category: MenuCategoryEntity)
+
+    @Query("DELETE FROM menu_categories WHERE id = :categoryId")
+    suspend fun deleteMenuCategoryById(categoryId: Long)
 
     // Menu Items
     @Query("SELECT * FROM menu_items ORDER BY menuCategoryId ASC, sortOrder ASC, id ASC")

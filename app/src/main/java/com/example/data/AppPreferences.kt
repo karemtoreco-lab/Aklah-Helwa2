@@ -46,9 +46,9 @@ class AppPreferences(private val context: Context) {
         val DELIVERY_ZONES_JSON = stringPreferencesKey("delivery_zones_json")
     }
 
-    // Gourmet Dark Mode is the default on fresh launch
+    // Light Luxury Mode is the default on fresh launch
     val isDarkMode: Flow<Boolean> = context.appDataStore.data.map { prefs ->
-        prefs[Keys.IS_DARK_MODE] ?: true
+        prefs[Keys.IS_DARK_MODE] ?: false
     }
 
     val adminPin: Flow<String> = context.appDataStore.data.map { prefs ->
@@ -131,6 +131,16 @@ class AppPreferences(private val context: Context) {
         context.appDataStore.edit { prefs ->
             prefs[Keys.CUSTOMER_PHONE] = phone.trim()
             prefs[Keys.CUSTOMER_ADDRESS] = address.trim()
+        }
+    }
+
+    suspend fun clearCustomerProfile() {
+        context.appDataStore.edit { prefs ->
+            prefs.remove(Keys.CUSTOMER_USER_ID)
+            prefs.remove(Keys.CUSTOMER_USERNAME)
+            prefs.remove(Keys.CUSTOMER_PASSWORD)
+            prefs.remove(Keys.CUSTOMER_PHONE)
+            prefs.remove(Keys.CUSTOMER_ADDRESS)
         }
     }
 

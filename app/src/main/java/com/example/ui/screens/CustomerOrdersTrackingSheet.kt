@@ -103,7 +103,7 @@ fun CustomerOrdersTrackingSheet(
                         .background(colors.warmAccentGradient),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = Color.White, modifier = Modifier.size(21.dp))
+                    Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(21.dp))
                 }
                 Column {
                     Text(
@@ -219,18 +219,18 @@ private fun TrackedOrderCard(
                     color = colors.textSecondary
                 )
                 Surface(
-                    color = if (isCancelled) colors.primaryContainer else if (isDelivered) colors.profitContainer else colors.secondaryContainer,
+                    color = if (isCancelled) colors.errorContainer else if (isDelivered) colors.profitContainer else colors.secondaryContainer,
                     shape = RoundedCornerShape(50),
                     border = BorderStroke(
                         1.dp,
-                        (if (isCancelled) colors.primaryBrand else if (isDelivered) colors.profitGreen else colors.goldAccent).copy(alpha = 0.4f)
+                        (if (isCancelled) colors.errorRed else if (isDelivered) colors.profitGreen else colors.goldAccent).copy(alpha = 0.4f)
                     )
                 ) {
                     Text(
                         text = OrderStatus.trackingTitle(order.status),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.ExtraBold,
-                        color = if (isCancelled) colors.primaryBrand else if (isDelivered) colors.onProfitContainer else colors.goldAccent,
+                        color = if (isCancelled) colors.onErrorContainer else if (isDelivered) colors.onProfitContainer else colors.goldText,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
                 }

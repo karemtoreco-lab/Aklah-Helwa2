@@ -113,7 +113,7 @@ fun ProductPickerDialog(
                                 .background(colors.warmAccentGradient),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.RestaurantMenu, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
+                            Icon(Icons.Default.RestaurantMenu, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(19.dp))
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(

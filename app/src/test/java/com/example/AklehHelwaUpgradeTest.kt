@@ -206,7 +206,7 @@ class AklehHelwaUpgradeTest {
     }
 
     @Test
-    fun `migration 1 to 4 preserves existing v1 order records and initializes v4 defaults`() {
+    fun `migration 1 to 6 preserves existing v1 order records and initializes v6 defaults`() {
         val dbName = "migration_test_db"
         context.deleteDatabase(dbName)
 
@@ -250,12 +250,14 @@ class AklehHelwaUpgradeTest {
         val helper = FrameworkSQLiteOpenHelperFactory().create(config)
         helper.writableDatabase.close()
 
-        // 2. Open with Room v4 + MIGRATION_1_2 + MIGRATION_2_3 + MIGRATION_3_4 and verify old order survived
+        // 2. Open with Room v6 + all migrations and verify old order survived
         val migratedDb = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
             .addMigrations(
                 AppDatabase.MIGRATION_1_2,
                 AppDatabase.MIGRATION_2_3,
-                AppDatabase.MIGRATION_3_4
+                AppDatabase.MIGRATION_3_4,
+                AppDatabase.MIGRATION_4_5,
+                AppDatabase.MIGRATION_5_6
             )
             .allowMainThreadQueries()
             .build()
@@ -270,9 +272,56 @@ class AklehHelwaUpgradeTest {
             assertEquals("", orders.first().deliveryZone)
             assertEquals(0.0, orders.first().shippingFee, 0.001)
             assertFalse(orders.first().isRated)
+            assertEquals(0.0, orders.first().extraPrepCost, 0.001)
+            assertEquals("", orders.first().extraPrepNotes)
         }
         migratedDb.close()
         context.deleteDatabase(dbName)
+    }
+
+    @Test
+    fun `batch item cost and extra prep cost persist and compute net profit accurately`() = runBlocking {
+        businessRepo.ensureInitialCatalog()
+        val cabbage = businessRepo.allProducts.first().first { it.name == "كيلو محشي كرنب" }
+
+        val line = OrderLineItemEntity(
+            orderId = 0L,
+            productId = cabbage.id,
+            productNameSnapshot = cabbage.name,
+            quantity = 3.0,
+            unitPurchaseCost = 25.0,
+            unitSellingPrice = 120.0,
+            totalPurchaseCost = 25.0,
+            totalSellingPrice = 360.0,
+            itemGrossProfit = 335.0,
+            isTotalCostForWholeQty = true
+        )
+        val extraPrepCost = 30.0
+        val order = Order(
+            customerName = "أم سلمى",
+            itemsDescription = "3 × كيلو محشي كرنب",
+            salePrice = 360.0,
+            costPrice = 25.0 + extraPrepCost,
+            netProfit = 360.0 - (25.0 + extraPrepCost),
+            yearMonth = "2026-11",
+            status = OrderStatus.DELIVERED.name,
+            paymentStatus = PaymentStatus.PAID.name,
+            extraPrepCost = extraPrepCost,
+            extraPrepNotes = "خضرة وصلصة وأرز وتوابل"
+        )
+
+        val savedId = orderRepo.saveOrderWithItems(order, listOf(line))
+        val savedOrder = orderRepo.allOrders.first().first { it.id == savedId }
+        val savedItems = orderRepo.getLineItemsForOrder(savedId)
+
+        assertEquals(360.0, savedOrder.salePrice, 0.001)
+        assertEquals(55.0, savedOrder.costPrice, 0.001)
+        assertEquals(30.0, savedOrder.extraPrepCost, 0.001)
+        assertEquals(25.0, savedOrder.itemsCostPrice, 0.001)
+        assertEquals(305.0, savedOrder.netProfit, 0.001)
+        assertEquals("خضرة وصلصة وأرز وتوابل", savedOrder.extraPrepNotes)
+        assertTrue(savedItems.first().isTotalCostForWholeQty)
+        assertEquals(25.0, savedItems.first().totalPurchaseCost, 0.001)
     }
 
     @Test

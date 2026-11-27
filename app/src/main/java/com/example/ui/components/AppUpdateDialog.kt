@@ -98,13 +98,13 @@ fun AppUpdateDialog(
                             .shadow(14.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.55f))
                             .clip(CircleShape)
                             .background(colors.warmAccentGradient)
-                            .border(2.dp, Color.White.copy(alpha = 0.35f), CircleShape),
+                            .border(2.dp, colors.onAccentText.copy(alpha = 0.25f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.SystemUpdate,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = colors.onAccentText,
                             modifier = Modifier.size(34.dp)
                         )
                     }
@@ -207,13 +207,13 @@ fun AppUpdateDialog(
                         .bounceClick()
                         .testTag("update_now_btn")
                 ) {
-                    Icon(Icons.Default.Download, contentDescription = null, tint = Color.White)
+                    Icon(Icons.Default.Download, contentDescription = null, tint = colors.onAccentText)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "تحديث الآن",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White
+                        color = colors.onAccentText
                     )
                 }
 

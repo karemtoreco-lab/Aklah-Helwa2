@@ -23,6 +23,10 @@ class OrderRepository(private val orderDao: OrderDao) {
         return orderDao.getLineItemsForMonth(yearMonth)
     }
 
+    suspend fun getAllOrdersOnce(): List<Order> {
+        return orderDao.getAllOrdersOnce()
+    }
+
     suspend fun getLineItemsForOrder(orderId: Long): List<OrderLineItemEntity> {
         return orderDao.getLineItemsForOrder(orderId)
     }
@@ -52,12 +56,20 @@ class OrderRepository(private val orderDao: OrderDao) {
     }
 
     // Treasury & Capital
+    suspend fun getAllTreasuryTransactionsOnce(): List<TreasuryTransactionEntity> {
+        return orderDao.getAllTreasuryTransactionsOnce()
+    }
+
     suspend fun getTreasuryTxByCloudId(cloudId: String): TreasuryTransactionEntity? {
         return orderDao.getTreasuryTxByCloudId(cloudId)
     }
 
     suspend fun insertTreasuryTransaction(tx: TreasuryTransactionEntity): Long {
         return orderDao.insertTreasuryTransaction(tx)
+    }
+
+    suspend fun updateTreasuryTransaction(tx: TreasuryTransactionEntity) {
+        orderDao.updateTreasuryTransaction(tx)
     }
 
     suspend fun deleteTreasuryTransaction(tx: TreasuryTransactionEntity) {

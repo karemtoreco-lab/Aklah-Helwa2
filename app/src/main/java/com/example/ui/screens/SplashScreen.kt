@@ -117,8 +117,8 @@ fun SplashScreen(
     ) {
         CheckeredRibbon(
             modifier = Modifier.align(Alignment.TopCenter),
-            height = 8.dp,
-            squareSize = 8.dp
+            height = 4.dp,
+            squareSize = 4.dp
         )
 
         Column(
@@ -226,7 +226,7 @@ fun SplashScreen(
                             Icon(
                                 imageVector = Icons.Default.Restaurant,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = colors.onAccentText,
                                 modifier = Modifier.size(14.dp)
                             )
                         }

@@ -1,5 +1,8 @@
 package com.example.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,8 +31,13 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
@@ -37,10 +45,12 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +61,8 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,16 +77,19 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.BuildConfig
+import com.example.model.AppUser
 import com.example.model.AppVersionConfig
 import com.example.model.CloudConfig
 import com.example.model.CloudSyncState
 import com.example.model.DeliveryZone
 import com.example.ui.theme.AppTheme
+import com.example.ui.theme.LightTextPrimary
 import com.example.util.DateUtils
 import java.util.UUID
 
@@ -102,6 +117,9 @@ fun AdminSettingsDialog(
     appVersionConfig: AppVersionConfig?,
     cloudConfig: CloudConfig,
     cloudSyncState: CloudSyncState,
+    appUsers: List<AppUser> = emptyList(),
+    isForceResyncing: Boolean = false,
+    forceResyncFeedback: Pair<Boolean, String>? = null,
     onToggleTheme: () -> Unit,
     onUpdatePin: (String) -> Unit,
     onUpdateWhatsAppNumber: (String) -> Unit,
@@ -109,6 +127,8 @@ fun AdminSettingsDialog(
     onSaveDeliveryZones: (List<DeliveryZone>) -> Unit,
     onPublishAppVersion: (Int, String, String, String, Boolean) -> Unit,
     onSyncMenuNow: () -> Unit,
+    onForceResyncNow: () -> Unit = {},
+    onDeleteAppUser: (AppUser) -> Unit = {},
     onReturnToCustomerStorefront: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -119,6 +139,8 @@ fun AdminSettingsDialog(
     var editableZones by remember(deliveryZones) { mutableStateOf(deliveryZones) }
     var newZoneName by remember { mutableStateOf("") }
     var newZoneFee by remember { mutableStateOf("") }
+    var usersSectionExpanded by remember { mutableStateOf(false) }
+    var userPendingDeletion by remember { mutableStateOf<AppUser?>(null) }
     var versionCodeInput by remember(appVersionConfig) {
         mutableStateOf((appVersionConfig?.latestVersionCode ?: (BuildConfig.VERSION_CODE + 1)).toString())
     }
@@ -179,7 +201,7 @@ fun AdminSettingsDialog(
                                     .background(colors.warmAccentGradient),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Settings, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                Icon(Icons.Default.Settings, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(22.dp))
                             }
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
@@ -290,7 +312,7 @@ fun AdminSettingsDialog(
                                     .bounceClick()
                                     .testTag("save_daily_offer_btn")
                             ) {
-                                Text("حفظ عرض اليوم", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text("حفظ عرض اليوم", color = colors.onAccentText, fontWeight = FontWeight.Bold)
                             }
                             if (offerInput.isNotBlank()) {
                                 OutlinedButton(
@@ -416,7 +438,7 @@ fun AdminSettingsDialog(
                                     .clip(CircleShape)
                                     .background(colors.primaryBrand)
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = "إضافة منطقة", tint = Color.White)
+                                Icon(Icons.Default.Add, contentDescription = "إضافة منطقة", tint = colors.onAccentText)
                             }
                         }
 
@@ -430,7 +452,7 @@ fun AdminSettingsDialog(
                                 .bounceClick()
                                 .testTag("save_delivery_zones_btn")
                         ) {
-                            Text("حفظ مناطق التوصيل", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("حفظ مناطق التوصيل", color = LightTextPrimary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -484,7 +506,7 @@ fun AdminSettingsDialog(
                                     .defaultMinSize(minHeight = 48.dp)
                                     .bounceClick()
                             ) {
-                                Text("حفظ", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text("حفظ", color = colors.onAccentText, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -504,7 +526,7 @@ fun AdminSettingsDialog(
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            SettingsSectionBadge(Icons.Default.Chat, Color(0xFF25D366))
+                            SettingsSectionBadge(Icons.Default.Chat, colors.profitGreen)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "إعدادات استقبال الطلبات عبر واتساب",
@@ -528,7 +550,7 @@ fun AdminSettingsDialog(
                                 onValueChange = { whatsAppInput = it },
                                 label = { Text("رقم واتساب الإدارة (مثال: 2010xxxxxxxxx)") },
                                 leadingIcon = {
-                                    Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFF25D366))
+                                    Icon(Icons.Default.Phone, contentDescription = null, tint = colors.profitGreen)
                                 },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -539,7 +561,7 @@ fun AdminSettingsDialog(
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedContainerColor = colors.cardSurface,
                                     unfocusedContainerColor = colors.cardSurface,
-                                    focusedBorderColor = Color(0xFF25D366),
+                                    focusedBorderColor = colors.profitGreen,
                                     unfocusedBorderColor = colors.cardBorder,
                                     focusedTextColor = colors.textPrimary,
                                     unfocusedTextColor = colors.textPrimary
@@ -548,7 +570,7 @@ fun AdminSettingsDialog(
                             Button(
                                 onClick = { onUpdateWhatsAppNumber(whatsAppInput) },
                                 shape = RoundedCornerShape(50),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                                colors = ButtonDefaults.buttonColors(containerColor = colors.profitGreen),
                                 modifier = Modifier
                                     .defaultMinSize(minHeight = 48.dp)
                                     .bounceClick()
@@ -579,7 +601,7 @@ fun AdminSettingsDialog(
                         ) {
                             SettingsSectionBadge(
                                 icon = if (cloudSyncState is CloudSyncState.Error) Icons.Default.CloudOff else Icons.Default.CloudDone,
-                                tint = if (cloudSyncState is CloudSyncState.Error) colors.primaryBrand else colors.profitGreen
+                                tint = if (cloudSyncState is CloudSyncState.Error) colors.errorRed else colors.profitGreen
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
@@ -591,11 +613,11 @@ fun AdminSettingsDialog(
                         }
 
                         Surface(
-                            color = if (cloudSyncState is CloudSyncState.Error) colors.primaryContainer else colors.profitContainer,
+                            color = if (cloudSyncState is CloudSyncState.Error) colors.errorContainer else colors.profitContainer,
                             shape = RoundedCornerShape(16.dp),
                             border = BorderStroke(
                                 1.dp,
-                                if (cloudSyncState is CloudSyncState.Error) colors.primaryBrand.copy(alpha = 0.35f) else colors.profitGreen.copy(alpha = 0.4f)
+                                if (cloudSyncState is CloudSyncState.Error) colors.errorRed.copy(alpha = 0.35f) else colors.profitGreen.copy(alpha = 0.4f)
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -609,7 +631,7 @@ fun AdminSettingsDialog(
                                 Icon(
                                     imageVector = if (cloudSyncState is CloudSyncState.Error) Icons.Default.CloudOff else Icons.Default.CheckCircle,
                                     contentDescription = null,
-                                    tint = if (cloudSyncState is CloudSyncState.Error) colors.primaryBrand else colors.profitGreen,
+                                    tint = if (cloudSyncState is CloudSyncState.Error) colors.errorRed else colors.profitGreen,
                                     modifier = Modifier.size(22.dp)
                                 )
                                 Column(modifier = Modifier.weight(1f)) {
@@ -621,13 +643,13 @@ fun AdminSettingsDialog(
                                         },
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.ExtraBold,
-                                        color = if (cloudSyncState is CloudSyncState.Error) colors.onPrimaryContainer else colors.onProfitContainer
+                                        color = if (cloudSyncState is CloudSyncState.Error) colors.onErrorContainer else colors.onProfitContainer
                                     )
                                     Text(
                                         text = cloudSyncState.lastError
                                             ?: "تتم مزامنة المنيو والصور وطلبات العملاء وإعدادات الواتساب تلقائياً بين جميع الأجهزة.",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = if (cloudSyncState is CloudSyncState.Error) colors.primaryBrand else colors.textSecondary
+                                        color = if (cloudSyncState is CloudSyncState.Error) colors.onErrorContainer else colors.textSecondary
                                     )
                                 }
                             }
@@ -635,6 +657,7 @@ fun AdminSettingsDialog(
 
                         Button(
                             onClick = onSyncMenuNow,
+                            enabled = !isForceResyncing,
                             shape = RoundedCornerShape(50),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.profitGreen),
                             modifier = Modifier
@@ -645,7 +668,212 @@ fun AdminSettingsDialog(
                         ) {
                             Icon(Icons.Default.Sync, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("مزامنة البيانات الآن", color = Color.White, fontWeight = FontWeight.ExtraBold)
+                            Text("رفع ومزامنة البيانات الآن", color = Color.White, fontWeight = FontWeight.ExtraBold)
+                        }
+
+                        OutlinedButton(
+                            onClick = onForceResyncNow,
+                            enabled = !isForceResyncing,
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.2.dp, colors.primaryBrand),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 48.dp)
+                                .bounceClick()
+                                .testTag("force_resync_btn")
+                        ) {
+                            if (isForceResyncing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.2.dp,
+                                    color = colors.primaryBrand
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "جاري سحب وتحديث البيانات...",
+                                    color = colors.primaryBrand,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.CloudSync,
+                                    contentDescription = null,
+                                    tint = colors.primaryBrand,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "إعادة مزامنة شاملة (طوارئ)",
+                                    color = colors.primaryBrand,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                        }
+
+                        AnimatedVisibility(
+                            visible = forceResyncFeedback != null,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            forceResyncFeedback?.let { (isSuccess, message) ->
+                                Surface(
+                                    color = if (isSuccess) colors.profitContainer else colors.errorContainer,
+                                    shape = RoundedCornerShape(14.dp),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (isSuccess) colors.profitGreen.copy(alpha = 0.4f) else colors.errorRed.copy(alpha = 0.4f)
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("force_resync_feedback_banner")
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isSuccess) Icons.Default.CheckCircle else Icons.Default.ErrorOutline,
+                                            contentDescription = null,
+                                            tint = if (isSuccess) colors.profitGreen else colors.errorRed,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Text(
+                                            text = message,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isSuccess) colors.onProfitContainer else colors.onErrorContainer,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Registered App Accounts Card (Delete Test / Registered Accounts)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, colors.cardBorder, RoundedCornerShape(22.dp))
+                        .testTag("settings_registered_users_card"),
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = colors.secondarySurface)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(15.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 48.dp)
+                                .bounceClick { usersSectionExpanded = !usersSectionExpanded },
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                SettingsSectionBadge(Icons.Default.Group, colors.primaryBrand)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "إدارة الحسابات المسجلة (${appUsers.size})",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = colors.textPrimary
+                                    )
+                                    Text(
+                                        text = "اضغطي لحذف أي حساب تجريبي نهائياً من السحابة",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = colors.textSecondary
+                                    )
+                                }
+                            }
+                            Icon(
+                                imageVector = if (usersSectionExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = "عرض أو إخفاء الحسابات",
+                                tint = colors.textSecondary
+                            )
+                        }
+
+                        AnimatedVisibility(visible = usersSectionExpanded) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                HorizontalDivider(color = colors.cardBorder)
+                                if (appUsers.isEmpty()) {
+                                    Text(
+                                        text = "لا توجد حسابات مسجلة على السحابة حالياً",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = colors.textSecondary,
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                } else {
+                                    val now = System.currentTimeMillis()
+                                    appUsers.forEach { user ->
+                                        val isLive = user.isLiveOnline(now)
+                                        Surface(
+                                            color = colors.cardSurface,
+                                            shape = RoundedCornerShape(14.dp),
+                                            border = BorderStroke(1.dp, if (isLive) colors.profitGreen.copy(alpha = 0.4f) else colors.cardBorder),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = user.username,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = colors.textPrimary,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    val joined = if (user.joinedAt > 0L) DateUtils.formatDate(user.joinedAt) else "—"
+                                                    Text(
+                                                        text = "${if (isLive) "متصل الآن" else "غير متصل"} • انضم: $joined • طلبات: ${user.ordersCount}",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = if (isLive) colors.profitGreen else colors.textSecondary
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Surface(
+                                                    onClick = { userPendingDeletion = user },
+                                                    color = colors.errorContainer,
+                                                    shape = RoundedCornerShape(50),
+                                                    border = BorderStroke(1.dp, colors.errorRed.copy(alpha = 0.35f)),
+                                                    modifier = Modifier
+                                                        .minimumInteractiveComponentSize()
+                                                        .defaultMinSize(minHeight = 36.dp)
+                                                        .bounceClick()
+                                                        .testTag("settings_delete_user_btn_${user.userId}")
+                                                ) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.DeleteOutline,
+                                                            contentDescription = "حذف الحساب",
+                                                            tint = colors.errorRed,
+                                                            modifier = Modifier.size(14.dp)
+                                                        )
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                        Text(
+                                                            text = "حذف الحساب",
+                                                            fontSize = 11.sp,
+                                                            fontWeight = FontWeight.ExtraBold,
+                                                            color = colors.onErrorContainer
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -785,9 +1013,9 @@ fun AdminSettingsDialog(
                                 .bounceClick()
                                 .testTag("publish_app_update_btn")
                         ) {
-                            Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("نشر التحديث للعملاء", color = Color.White, fontWeight = FontWeight.ExtraBold)
+                            Text("نشر التحديث للعملاء", color = colors.onAccentText, fontWeight = FontWeight.ExtraBold)
                         }
                     }
                 }
@@ -821,5 +1049,51 @@ fun AdminSettingsDialog(
                 )
             }
         }
+    }
+
+    userPendingDeletion?.let { targetUser ->
+        AlertDialog(
+            onDismissRequest = { userPendingDeletion = null },
+            containerColor = colors.cardSurface,
+            shape = RoundedCornerShape(24.dp),
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.DeleteOutline,
+                    contentDescription = null,
+                    tint = colors.errorRed
+                )
+            },
+            title = {
+                Text(
+                    text = "تأكيد حذف الحساب",
+                    fontWeight = FontWeight.ExtraBold,
+                    color = colors.textPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = "هل أنتِ متأكدة من حذف حساب (${targetUser.username}) نهائياً؟ سيتم حذفه من السحابة ومن القائمة فوراً.",
+                    color = colors.textSecondary,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteAppUser(targetUser)
+                        userPendingDeletion = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = colors.errorRed),
+                    modifier = Modifier.testTag("settings_confirm_delete_user_btn")
+                ) {
+                    Text("حذف نهائياً", fontWeight = FontWeight.ExtraBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { userPendingDeletion = null }) {
+                    Text("إلغاء", color = colors.textSecondary, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
     }
 }

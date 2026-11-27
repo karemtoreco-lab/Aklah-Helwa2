@@ -298,7 +298,7 @@ fun ProductEditorDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand),
                 modifier = Modifier.defaultMinSize(minHeight = 48.dp).bounceClick().testTag("save_product_btn")
             ) {
-                Text("حفظ", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("حفظ", color = colors.onAccentText, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -361,7 +361,7 @@ fun ManageCategoriesDialog(
                         colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand),
                         modifier = Modifier.defaultMinSize(minHeight = 48.dp).bounceClick()
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "حفظ القسم", tint = Color.White)
+                        Icon(Icons.Default.Add, contentDescription = "حفظ القسم", tint = colors.onAccentText)
                     }
                 }
 

@@ -93,13 +93,13 @@ fun AdminPinDialog(
                         .shadow(12.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.45f))
                         .clip(CircleShape)
                         .background(colors.warmAccentGradient)
-                        .border(2.dp, Color.White.copy(alpha = 0.3f), CircleShape),
+                        .border(2.dp, colors.onAccentText.copy(alpha = 0.25f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Lock,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = colors.onAccentText,
                         modifier = Modifier.size(30.dp)
                     )
                 }
@@ -198,7 +198,7 @@ fun AdminPinDialog(
                             .bounceClick()
                             .testTag("confirm_admin_pin_btn")
                     ) {
-                        Text("دخول", color = Color.White, fontWeight = FontWeight.ExtraBold)
+                        Text("دخول", color = colors.onAccentText, fontWeight = FontWeight.ExtraBold)
                     }
                 }
             }

@@ -122,7 +122,7 @@ fun MenuCategoryEditorDialog(
                     .defaultMinSize(minHeight = 48.dp)
                     .bounceClick()
             ) {
-                Text("حفظ", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("حفظ", color = colors.onAccentText, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -427,7 +427,7 @@ fun MenuItemEditorDialog(
                     .bounceClick()
                     .testTag("save_menu_item_btn")
             ) {
-                Text("حفظ", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("حفظ", color = colors.onAccentText, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -710,7 +710,7 @@ fun AddManualMenuItemDialog(
                     .defaultMinSize(minHeight = 48.dp)
                     .bounceClick()
             ) {
-                Text("إضافة للمنيو", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("إضافة للمنيو", color = colors.onAccentText, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

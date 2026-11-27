@@ -23,6 +23,9 @@ interface OrderDao {
     @Query("SELECT DISTINCT yearMonth FROM orders ORDER BY yearMonth DESC")
     fun getDistinctMonths(): Flow<List<String>>
 
+    @Query("SELECT * FROM orders ORDER BY orderDate DESC")
+    suspend fun getAllOrdersOnce(): List<Order>
+
     @Query("SELECT * FROM orders WHERE id = :id LIMIT 1")
     suspend fun getOrderById(id: Long): Order?
 
@@ -81,11 +84,17 @@ interface OrderDao {
     @Query("SELECT * FROM treasury_transactions ORDER BY createdAt DESC")
     fun getAllTreasuryTransactions(): Flow<List<TreasuryTransactionEntity>>
 
+    @Query("SELECT * FROM treasury_transactions ORDER BY createdAt DESC")
+    suspend fun getAllTreasuryTransactionsOnce(): List<TreasuryTransactionEntity>
+
     @Query("SELECT * FROM treasury_transactions WHERE cloudId = :cloudId LIMIT 1")
     suspend fun getTreasuryTxByCloudId(cloudId: String): TreasuryTransactionEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTreasuryTransaction(tx: TreasuryTransactionEntity): Long
+
+    @Update
+    suspend fun updateTreasuryTransaction(tx: TreasuryTransactionEntity)
 
     @Delete
     suspend fun deleteTreasuryTransaction(tx: TreasuryTransactionEntity)

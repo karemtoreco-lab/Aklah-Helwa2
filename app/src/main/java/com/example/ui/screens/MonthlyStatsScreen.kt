@@ -75,6 +75,7 @@ import com.example.model.ExpenseEntity
 import com.example.model.MonthlyStats
 import com.example.ui.components.AnimatedCurrencyCounter
 import com.example.ui.components.AnimatedIntCounter
+import com.example.ui.components.LuxuryCard
 import com.example.ui.components.OrdersVolumeChartCard
 import com.example.ui.components.ProductPerformanceCard
 import com.example.ui.components.SalesAndProfitChartCard
@@ -125,57 +126,63 @@ fun MonthlyStatsScreen(
                 .padding(bottom = 124.dp)
                 .testTag("monthly_stats_screen")
         ) {
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            Surface(
-                color = if (colors.isDark) colors.glassSurface else colors.cardSurface,
-                shape = RoundedCornerShape(22.dp),
-                border = BorderStroke(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(if (colors.isDark) 0.dp else 4.dp, RoundedCornerShape(22.dp))
-                    .testTag("month_selector_card")
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 10.dp, horizontal = 14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            StaggeredAppearItem(index = 0) {
+                LuxuryCard(
+                    cornerRadius = 24.dp,
+                    elevation = 3.dp,
+                    modifier = Modifier.testTag("month_selector_card")
                 ) {
-                    Box(
+                    Row(
                         modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(colors.secondarySurface)
-                            .border(1.dp, colors.cardBorder, CircleShape)
-                            .bounceClick(onClick = onNextMonth)
-                            .testTag("next_month_btn"),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp, horizontal = 14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "الشهر القادم", tint = colors.primaryBrand, modifier = Modifier.size(18.dp))
-                    }
-
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.Center) {
-                        Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(21.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("تقرير أرباح $monthTitleArabic", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = colors.textPrimary, textAlign = TextAlign.Center)
-                            Text("تحليل الأداء والمبيعات والمصاريف", style = MaterialTheme.typography.labelSmall, color = colors.textSecondary, textAlign = TextAlign.Center)
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(colors.secondarySurface)
+                                .border(1.dp, colors.cardBorder, CircleShape)
+                                .bounceClick(onClick = onNextMonth)
+                                .testTag("next_month_btn"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "الشهر القادم", tint = colors.primaryBrand, modifier = Modifier.size(18.dp))
                         }
-                    }
 
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(colors.secondarySurface)
-                            .border(1.dp, colors.cardBorder, CircleShape)
-                            .bounceClick(onClick = onPreviousMonth)
-                            .testTag("prev_month_btn"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "الشهر السابق", tint = colors.primaryBrand, modifier = Modifier.size(18.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.Center) {
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .background(colors.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(18.dp))
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(horizontalAlignment = Alignment.Start) {
+                                Text("تقرير أرباح $monthTitleArabic", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = colors.textPrimary)
+                                Text("تحليل الأداء والمبيعات والمصاريف", style = MaterialTheme.typography.labelSmall, color = colors.textSecondary)
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(colors.secondarySurface)
+                                .border(1.dp, colors.cardBorder, CircleShape)
+                                .bounceClick(onClick = onPreviousMonth)
+                                .testTag("prev_month_btn"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "الشهر السابق", tint = colors.primaryBrand, modifier = Modifier.size(18.dp))
+                        }
                     }
                 }
             }
@@ -183,81 +190,103 @@ fun MonthlyStatsScreen(
             Spacer(modifier = Modifier.height(14.dp))
 
             // Hero Financial Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .shadow(12.dp, RoundedCornerShape(26.dp), spotColor = colors.primaryBrand.copy(alpha = 0.4f)),
-                shape = RoundedCornerShape(26.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-            ) {
-                Box(
+            StaggeredAppearItem(index = 1) {
+                val heroPrimaryText = if (colors.isDark) colors.textPrimary else Color.White
+                val heroSecondaryText = if (colors.isDark) colors.textSecondary else Color.White.copy(alpha = 0.9f)
+                val heroChipBg = if (colors.isDark) colors.secondarySurface else Color.White.copy(alpha = 0.16f)
+                val heroChipBorder = if (colors.isDark) colors.cardBorder else Color.White.copy(alpha = 0.25f)
+
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(colors.heroGradient)
-                        .padding(18.dp)
+                        .wrapContentHeight()
+                        .shadow(
+                            elevation = if (colors.isDark) 0.dp else 8.dp,
+                            shape = RoundedCornerShape(28.dp),
+                            ambientColor = colors.primaryBrand.copy(alpha = 0.2f),
+                            spotColor = colors.primaryBrand.copy(alpha = 0.25f)
+                        ),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    border = BorderStroke(1.dp, if (colors.isDark) colors.cardBorder else colors.primaryBrand)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(colors.heroGradient)
+                            .padding(20.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("total_sales_card")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = Color(0xFFFFE599), modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("إجمالي المبيعات", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.9f))
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            AnimatedCurrencyCounter(
-                                targetValue = stats.totalSales,
-                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                color = Color.White
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Surface(color = Color.White.copy(alpha = 0.18f), shape = RoundedCornerShape(50)) {
-                                Text(
-                                    text = monthTitleArabic,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("total_sales_card")
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.MonetizationOn,
+                                        contentDescription = null,
+                                        tint = if (colors.isDark) colors.goldAccent else Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text("إجمالي المبيعات", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = heroSecondaryText)
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                AnimatedCurrencyCounter(
+                                    targetValue = stats.totalSales,
+                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = heroPrimaryText
                                 )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Surface(
+                                    color = heroChipBg,
+                                    shape = RoundedCornerShape(50),
+                                    border = BorderStroke(1.dp, heroChipBorder)
+                                ) {
+                                    Text(
+                                        text = monthTitleArabic,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = heroPrimaryText,
+                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                                    )
+                                }
                             }
-                        }
 
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(18.dp))
-                                .background(Color.Black.copy(alpha = 0.26f))
-                                .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(18.dp))
-                                .padding(12.dp)
-                                .testTag("net_profit_card")
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFFA8F5EC), modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("إجمالي الربح", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFFA8F5EC))
-                            }
-                            Spacer(modifier = Modifier.height(6.dp))
-                            AnimatedCurrencyCounter(
-                                targetValue = stats.grossProfitBeforeExpenses,
-                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                color = Color(0xFFA8F5EC)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Surface(color = Color.White.copy(alpha = 0.2f), shape = RoundedCornerShape(50)) {
-                                Text(
-                                    text = "هامش ${String.format(Locale.US, "%.1f", stats.profitMarginPercent)}%",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(colors.profitContainer)
+                                    .border(1.dp, colors.profitGreen.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+                                    .padding(14.dp)
+                                    .testTag("net_profit_card")
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.TrendingUp, contentDescription = null, tint = colors.profitGreen, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text("إجمالي الربح", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = colors.onProfitContainer)
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                AnimatedCurrencyCounter(
+                                    targetValue = stats.grossProfitBeforeExpenses,
+                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = colors.onProfitContainer
                                 )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Surface(color = colors.profitGreen.copy(alpha = 0.16f), shape = RoundedCornerShape(50)) {
+                                    Text(
+                                        text = "هامش ${String.format(Locale.US, "%.1f", stats.profitMarginPercent)}%",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colors.onProfitContainer,
+                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -266,157 +295,185 @@ fun MonthlyStatsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(22.dp))
-                    .testTag("costs_summary_card"),
-                shape = RoundedCornerShape(22.dp),
-                colors = CardDefaults.cardColors(containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("إجمالي تكلفة الشراء:", style = MaterialTheme.typography.bodySmall, color = colors.textSecondary)
-                            AnimatedCurrencyCounter(
-                                targetValue = stats.totalPurchaseCost,
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = colors.textPrimary
-                            )
+            StaggeredAppearItem(index = 2) {
+                LuxuryCard(
+                    cornerRadius = 24.dp,
+                    elevation = 3.dp,
+                    modifier = Modifier.testTag("costs_summary_card")
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("إجمالي تكلفة الشراء والتجهيز", style = MaterialTheme.typography.labelSmall, color = colors.textSecondary)
+                                Spacer(modifier = Modifier.height(3.dp))
+                                AnimatedCurrencyCounter(
+                                    targetValue = stats.totalPurchaseCost,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = colors.textPrimary
+                                )
+                                if (stats.totalExtraPrepCost > 0.0) {
+                                    Text(
+                                        text = "منها ${DateUtils.formatCurrency(stats.totalExtraPrepCost)} خامات مساعدة",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = colors.goldText
+                                    )
+                                }
+                            }
+                            Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f)) {
+                                Text("متوسط ربح الأوردر", style = MaterialTheme.typography.labelSmall, color = colors.textSecondary)
+                                Spacer(modifier = Modifier.height(3.dp))
+                                AnimatedCurrencyCounter(
+                                    targetValue = stats.averageOrderProfit,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = colors.profitGreen
+                                )
+                            }
                         }
-                        Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f)) {
-                            Text("متوسط ربح الأوردر:", style = MaterialTheme.typography.bodySmall, color = colors.textSecondary)
-                            AnimatedCurrencyCounter(
-                                targetValue = stats.averageOrderProfit,
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                                color = colors.profitGreen
-                            )
-                        }
+                        Spacer(modifier = Modifier.height(14.dp))
+                        val targetRatio = if (stats.totalSales > 0) (stats.grossProfitBeforeExpenses / stats.totalSales).toFloat().coerceIn(0f, 1f) else 0f
+                        val animatedRatio by animateFloatAsState(
+                            targetValue = targetRatio,
+                            animationSpec = tween(750, easing = FastOutSlowInEasing),
+                            label = "margin_progress"
+                        )
+                        LinearProgressIndicator(
+                            progress = { animatedRatio },
+                            modifier = Modifier.fillMaxWidth().height(9.dp).clip(RoundedCornerShape(50)),
+                            color = colors.profitGreen,
+                            trackColor = colors.secondarySurface
+                        )
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    val targetRatio = if (stats.totalSales > 0) (stats.grossProfitBeforeExpenses / stats.totalSales).toFloat().coerceIn(0f, 1f) else 0f
-                    val animatedRatio by animateFloatAsState(
-                        targetValue = targetRatio,
-                        animationSpec = tween(750, easing = FastOutSlowInEasing),
-                        label = "margin_progress"
-                    )
-                    LinearProgressIndicator(
-                        progress = { animatedRatio },
-                        modifier = Modifier.fillMaxWidth().height(9.dp).clip(RoundedCornerShape(50)),
-                        color = colors.profitGreen,
-                        trackColor = colors.primaryContainer
-                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatCountChip("الأوردرات", stats.totalOrdersCount, if (colors.isDark) colors.glassSurface else colors.cardSurface, colors.textPrimary, Icons.Default.ShoppingBag, Modifier.weight(1f))
-                StatCountChip("تم التسليم", stats.deliveredCount, colors.profitContainer, colors.onProfitContainer, Icons.Default.CheckCircle, Modifier.weight(1f))
-                StatCountChip("قيد التجهيز", stats.pendingCount, colors.secondaryContainer, colors.goldAccent, Icons.Default.HourglassTop, Modifier.weight(1f))
-                StatCountChip("العملاء", stats.uniqueCustomersCount, if (colors.isDark) colors.glassSurface else colors.cardSurface, colors.secondaryAccent, Icons.Default.Group, Modifier.weight(1f))
+            StaggeredAppearItem(index = 3) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StatCountChip("الأوردرات", stats.totalOrdersCount, colors.cardSurface, colors.textPrimary, colors.primaryContainer, colors.primaryBrand, Icons.Default.ShoppingBag, Modifier.weight(1f))
+                    StatCountChip("تم التسليم", stats.deliveredCount, colors.cardSurface, colors.profitGreen, colors.profitContainer, colors.profitGreen, Icons.Default.CheckCircle, Modifier.weight(1f))
+                    StatCountChip("قيد التجهيز", stats.pendingCount, colors.cardSurface, colors.goldText, colors.secondaryContainer, colors.goldAccent, Icons.Default.HourglassTop, Modifier.weight(1f))
+                    StatCountChip("العملاء", stats.uniqueCustomersCount, colors.cardSurface, colors.textPrimary, colors.secondarySurface, colors.goldText, Icons.Default.Group, Modifier.weight(1f))
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SalesAndProfitChartCard(points = stats.dailyPoints)
+            StaggeredAppearItem(index = 4) {
+                SalesAndProfitChartCard(points = stats.dailyPoints)
+            }
             Spacer(modifier = Modifier.height(12.dp))
-            OrdersVolumeChartCard(points = stats.dailyPoints)
+            StaggeredAppearItem(index = 5) {
+                OrdersVolumeChartCard(points = stats.dailyPoints)
+            }
             Spacer(modifier = Modifier.height(12.dp))
-            ProductPerformanceCard(topProducts = stats.topProducts)
+            StaggeredAppearItem(index = 6) {
+                ProductPerformanceCard(topProducts = stats.topProducts)
+            }
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, if (colors.isDark) colors.glassBorder else colors.cardBorder, RoundedCornerShape(22.dp))
-                    .testTag("separate_expenses_section"),
-                shape = RoundedCornerShape(22.dp),
-                colors = CardDefaults.cardColors(containerColor = if (colors.isDark) colors.glassSurface else colors.cardSurface)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("المصاريف والتشغيل (منفصلة)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = colors.textPrimary)
-                            }
-                            Text(
-                                text = "إجمالي المصاريف: ${DateUtils.formatCurrency(stats.totalExpenses)} (لا تُخصم من إجمالي الربح)",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = colors.textSecondary
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = { showAddExpenseDialog = true },
-                            shape = RoundedCornerShape(50),
-                            colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand),
-                            modifier = Modifier
-                                .defaultMinSize(minHeight = 48.dp)
-                                .bounceClick()
-                                .testTag("add_expense_btn")
+            StaggeredAppearItem(index = 7) {
+                LuxuryCard(
+                    cornerRadius = 24.dp,
+                    elevation = 3.dp,
+                    modifier = Modifier.testTag("separate_expenses_section")
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("مصروف", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    if (expenses.isEmpty()) {
-                        Surface(
-                            color = colors.secondarySurface,
-                            shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.dp, colors.cardBorder),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "لا توجد مصاريف مسجلة في هذا الشهر حتى الآن",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = colors.textSecondary,
-                                modifier = Modifier.padding(12.dp)
-                            )
-                        }
-                    } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            expenses.forEachIndexed { idx, expense ->
-                                StaggeredAppearItem(index = idx) {
-                                    Surface(
-                                        color = colors.secondarySurface,
-                                        shape = RoundedCornerShape(16.dp),
-                                        border = BorderStroke(1.dp, colors.cardBorder),
-                                        modifier = Modifier.fillMaxWidth()
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .background(colors.primaryContainer),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically
+                                        Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(17.dp))
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("المصاريف والتشغيل (منفصلة)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, color = colors.textPrimary)
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "إجمالي المصاريف: ${DateUtils.formatCurrency(stats.totalExpenses)} (لا تُخصم من إجمالي الربح)",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colors.textSecondary
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(
+                                onClick = { showAddExpenseDialog = true },
+                                shape = RoundedCornerShape(50),
+                                colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand),
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .bounceClick()
+                                    .testTag("add_expense_btn")
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("مصروف", color = colors.onAccentText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        if (expenses.isEmpty()) {
+                            Surface(
+                                color = colors.secondarySurface,
+                                shape = RoundedCornerShape(16.dp),
+                                border = BorderStroke(1.dp, colors.cardBorder),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "لا توجد مصاريف مسجلة في هذا الشهر حتى الآن",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.textSecondary,
+                                    modifier = Modifier.padding(14.dp)
+                                )
+                            }
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                expenses.forEachIndexed { idx, expense ->
+                                    StaggeredAppearItem(index = idx) {
+                                        Surface(
+                                            color = colors.secondarySurface,
+                                            shape = RoundedCornerShape(16.dp),
+                                            border = BorderStroke(1.dp, colors.cardBorder),
+                                            modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(expense.title, color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                                Text("${expense.category} • ${DateUtils.formatDayMonth(expense.expenseDate)}", color = colors.textSecondary, fontSize = 11.sp)
-                                            }
-                                            Surface(color = colors.primaryContainer, shape = RoundedCornerShape(50)) {
-                                                Text(
-                                                    text = DateUtils.formatCurrency(expense.amount),
-                                                    color = colors.onPrimaryContainer,
-                                                    fontWeight = FontWeight.ExtraBold,
-                                                    fontSize = 12.sp,
-                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                                                )
-                                            }
-                                            IconButton(onClick = { onDeleteExpense(expense) }, modifier = Modifier.size(34.dp)) {
-                                                Icon(Icons.Default.Delete, contentDescription = "حذف المصروف", tint = colors.textSecondary, modifier = Modifier.size(16.dp))
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(12.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(expense.title, color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                    Text("${expense.category} • ${DateUtils.formatDayMonth(expense.expenseDate)}", color = colors.textSecondary, fontSize = 11.sp)
+                                                }
+                                                Surface(
+                                                    color = colors.primaryContainer,
+                                                    shape = RoundedCornerShape(50),
+                                                    border = BorderStroke(1.dp, colors.primaryBrand.copy(alpha = 0.25f))
+                                                ) {
+                                                    Text(
+                                                        text = DateUtils.formatCurrency(expense.amount),
+                                                        color = colors.onPrimaryContainer,
+                                                        fontWeight = FontWeight.ExtraBold,
+                                                        fontSize = 12.sp,
+                                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                                    )
+                                                }
+                                                IconButton(onClick = { onDeleteExpense(expense) }, modifier = Modifier.size(34.dp)) {
+                                                    Icon(Icons.Default.Delete, contentDescription = "حذف المصروف", tint = colors.textSecondary, modifier = Modifier.size(16.dp))
+                                                }
                                             }
                                         }
                                     }
@@ -435,7 +492,7 @@ fun MonthlyStatsScreen(
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = 54.dp)
                     .wrapContentHeight()
-                    .shadow(8.dp, RoundedCornerShape(50), spotColor = colors.profitGreen.copy(alpha = 0.4f))
+                    .shadow(8.dp, RoundedCornerShape(50), spotColor = colors.profitGreen.copy(alpha = 0.35f))
                     .bounceClick()
                     .testTag("share_monthly_report_btn"),
                 shape = RoundedCornerShape(50),
@@ -455,25 +512,36 @@ fun StatCountChip(
     count: Int,
     color: Color,
     textColor: Color,
+    iconBg: Color = AppTheme.colors.secondarySurface,
+    iconTint: Color = textColor,
     icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
     val colors = AppTheme.colors
     Surface(
         color = color,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(20.dp),
         border = BorderStroke(1.dp, colors.cardBorder),
+        shadowElevation = if (colors.isDark) 0.dp else 2.dp,
         modifier = modifier.wrapContentHeight()
     ) {
-        Column(modifier = Modifier.padding(vertical = 11.dp, horizontal = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, contentDescription = null, tint = textColor, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.height(4.dp))
+        Column(modifier = Modifier.padding(vertical = 12.dp, horizontal = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .background(iconBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
+            }
+            Spacer(modifier = Modifier.height(6.dp))
             AnimatedIntCounter(
                 targetValue = count,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
                 color = textColor
             )
-            Text(title, style = MaterialTheme.typography.labelSmall, color = textColor.copy(alpha = 0.85f), textAlign = TextAlign.Center, fontSize = 10.sp)
+            Text(title, style = MaterialTheme.typography.labelSmall, color = colors.textSecondary, textAlign = TextAlign.Center, fontSize = 10.sp)
         }
     }
 }
@@ -577,7 +645,7 @@ private fun AddExpenseDialog(
                     .bounceClick()
                     .testTag("save_expense_btn")
             ) {
-                Text("حفظ المصروف", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("حفظ المصروف", color = colors.onAccentText, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

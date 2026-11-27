@@ -23,6 +23,7 @@ import com.example.model.DailyStatPoint
 import com.example.model.DeliveryZone
 import com.example.model.DraftOrderLineItem
 import com.example.model.ExpenseEntity
+import com.example.model.ForceResyncReport
 import com.example.model.GeneratedMenuEntity
 import com.example.model.MenuCategoryEntity
 import com.example.model.MenuItemEntity
@@ -111,6 +112,36 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
         }
+
+        // Keep local store preferences mirrored with live cloud updates for seamless multi-device sync
+        viewModelScope.launch(Dispatchers.IO) {
+            cloudSyncManager.cloudKitchenOpen.collectLatest { remoteOpen ->
+                if (remoteOpen != null && appPreferences.kitchenOpen.first() != remoteOpen) {
+                    appPreferences.setKitchenOpen(remoteOpen)
+                }
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            cloudSyncManager.cloudWhatsAppNumber.collectLatest { remotePhone ->
+                if (!remotePhone.isNullOrBlank() && appPreferences.adminWhatsAppNumber.first() != remotePhone) {
+                    appPreferences.setAdminWhatsAppNumber(remotePhone)
+                }
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            cloudSyncManager.cloudDailyOffer.collectLatest { remoteOffer ->
+                if (remoteOffer != null && appPreferences.dailyOfferText.first() != remoteOffer) {
+                    appPreferences.setDailyOfferText(remoteOffer)
+                }
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            cloudSyncManager.cloudDeliveryZones.collectLatest { remoteZones ->
+                if (!remoteZones.isNullOrEmpty() && appPreferences.localDeliveryZones.first() != remoteZones) {
+                    appPreferences.saveDeliveryZones(remoteZones)
+                }
+            }
+        }
     }
 
     private val _appStage = MutableStateFlow(AppStage.SPLASH)
@@ -120,7 +151,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     val selectedTab: StateFlow<AppTab> = _selectedTab.asStateFlow()
 
     val isDarkMode: StateFlow<Boolean> = appPreferences.isDarkMode
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val adminPin: StateFlow<String> = appPreferences.adminPin
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppPreferences.DEFAULT_ADMIN_PIN)
@@ -194,8 +225,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     private val _isOrderDialogOpen = MutableStateFlow(false)
     val isOrderDialogOpen: StateFlow<Boolean> = _isOrderDialogOpen.asStateFlow()
 
-    private val _selectedOrderDetails = MutableStateFlow<Order?>(null)
-    val selectedOrderDetails: StateFlow<Order?> = _selectedOrderDetails.asStateFlow()
+    private val _selectedOrderId = MutableStateFlow<Long?>(null)
 
     private val _celebrationMessage = MutableStateFlow<String?>(null)
     val celebrationMessage: StateFlow<String?> = _celebrationMessage.asStateFlow()
@@ -208,6 +238,12 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isGeneratingPreview = MutableStateFlow(false)
     val isGeneratingPreview: StateFlow<Boolean> = _isGeneratingPreview.asStateFlow()
+
+    private val _isForceResyncing = MutableStateFlow(false)
+    val isForceResyncing: StateFlow<Boolean> = _isForceResyncing.asStateFlow()
+
+    private val _forceResyncFeedback = MutableStateFlow<Pair<Boolean, String>?>(null)
+    val forceResyncFeedback: StateFlow<Pair<Boolean, String>?> = _forceResyncFeedback.asStateFlow()
 
     private val _uiMessage = MutableStateFlow<String?>(null)
     val uiMessage: StateFlow<String?> = _uiMessage.asStateFlow()
@@ -279,6 +315,13 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
 
     val allOrders: StateFlow<List<Order>> = orderRepository.allOrders
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val selectedOrderDetails: StateFlow<Order?> = combine(
+        _selectedOrderId,
+        allOrders
+    ) { selectedId, orders ->
+        selectedId?.let { id -> orders.firstOrNull { it.id == id } }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val availableMonths: StateFlow<List<String>> = orderRepository.distinctMonths
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf(DateUtils.getCurrentYearMonth()))
@@ -443,6 +486,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
 
         val totalSales = activeOrders.sumOf { it.salePrice }
         val totalPurchaseCost = activeOrders.sumOf { it.costPrice }
+        val totalExtraPrepCost = activeOrders.sumOf { it.extraPrepCost }
         val grossProfitBeforeExpenses = activeOrders.sumOf { it.netProfit }
         val profitMargin = if (totalSales > 0) (grossProfitBeforeExpenses / totalSales) * 100.0 else 0.0
         val totalExpenses = expenses.sumOf { it.amount }
@@ -495,6 +539,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             yearMonth = yearMonth,
             totalSales = totalSales,
             totalPurchaseCost = totalPurchaseCost,
+            totalExtraPrepCost = totalExtraPrepCost,
             grossProfitBeforeExpenses = grossProfitBeforeExpenses,
             profitMarginPercent = profitMargin,
             totalExpenses = totalExpenses,
@@ -560,9 +605,15 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteAppUser(user: AppUser) {
         viewModelScope.launch(Dispatchers.IO) {
             val res = cloudSyncManager.deleteAppUserFromCloud(user.userId)
+            if (res.isSuccess) {
+                val localProfile = appPreferences.customerProfile.first()
+                if (localProfile.userId == user.userId) {
+                    appPreferences.clearCustomerProfile()
+                }
+            }
             withContext(Dispatchers.Main) {
                 _uiMessage.value = if (res.isSuccess) {
-                    "تم حذف حساب (${user.username}) نهائياً ✅"
+                    "تم حذف حساب (${user.username}) نهائياً من السحابة والقائمة ✅"
                 } else {
                     "تعذر حذف الحساب، تأكد من الاتصال بالإنترنت"
                 }
@@ -791,6 +842,10 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             if (!cloudSyncState.value.isCloudConnected) {
                 cloudSyncManager.configureAndStart(cloudConfig.value, enableAdminListeners = true)
             }
+            val catalogCats = categories.value.ifEmpty { businessRepository.getAllCategoriesOnce() }
+            val catalogProds = products.value.ifEmpty { businessRepository.getAllProductsOnce() }
+            cloudSyncManager.publishCatalogToCloud(catalogCats, catalogProds)
+
             val cats = menuCategories.value.ifEmpty { businessRepository.menuCategories.first() }
             val items = menuItems.value.ifEmpty { businessRepository.menuItems.first() }
             val res = cloudSyncManager.publishMenuToCloud(cats, items)
@@ -804,10 +859,42 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
 
             withContext(Dispatchers.Main) {
                 _uiMessage.value = if (res.isSuccess) {
-                    "تمت مزامنة المنيو والصور والإعدادات مع السحابة بنجاح"
+                    "تمت مزامنة الأصناف والمنيو والإعدادات مع السحابة بنجاح"
                 } else {
                     res.exceptionOrNull()?.localizedMessage ?: "تعذر مزامنة البيانات مع السحابة"
                 }
+            }
+        }
+    }
+
+    fun clearForceResyncFeedback() {
+        _forceResyncFeedback.value = null
+    }
+
+    fun forceFullResyncFromCloud() {
+        if (_isForceResyncing.value) return
+        viewModelScope.launch(Dispatchers.IO) {
+            _isForceResyncing.value = true
+            _forceResyncFeedback.value = null
+            if (!cloudSyncState.value.isCloudConnected) {
+                cloudSyncManager.configureAndStart(cloudConfig.value, enableAdminListeners = true)
+            }
+            val result = cloudSyncManager.forceFullResyncFromCloud()
+            withContext(Dispatchers.Main) {
+                _isForceResyncing.value = false
+                result.fold(
+                    onSuccess = { report: ForceResyncReport ->
+                        val msg = "تمت إعادة المزامنة الشاملة بنجاح ✅ (${report.ordersSynced} أوردر، ${report.productsSynced} صنف، ${report.menuItemsSynced} منيو)"
+                        _forceResyncFeedback.value = true to msg
+                        _uiMessage.value = msg
+                    },
+                    onFailure = { err ->
+                        val msg = err.localizedMessage?.takeIf { it.isNotBlank() }
+                            ?: "تعذر إتمام إعادة المزامنة الشاملة، تأكد من اتصال الإنترنت"
+                        _forceResyncFeedback.value = false to msg
+                        _uiMessage.value = msg
+                    }
+                )
             }
         }
     }
@@ -940,7 +1027,8 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                     unitSellingPrice = unitSell,
                     totalPurchaseCost = totalCost,
                     totalSellingPrice = totalSell,
-                    itemGrossProfit = totalSell - totalCost
+                    itemGrossProfit = totalSell - totalCost,
+                    isTotalCostForWholeQty = false
                 )
             }
 
@@ -1069,13 +1157,14 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                 val existingItems = withContext(Dispatchers.IO) {
                     orderRepository.getLineItemsForOrder(orderToEdit.id)
                 }
+                val prodMap = products.value.associateBy { it.id }
                 _editingDraftItems.value = if (existingItems.isNotEmpty()) {
                     existingItems.map { item ->
                         DraftOrderLineItem(
                             productId = item.productId,
                             productNameSnapshot = item.productNameSnapshot,
                             productImagePathSnapshot = item.productImagePathSnapshot,
-                            unitLabel = "كيلو",
+                            unitLabel = item.productId?.let { prodMap[it]?.unit } ?: "كيلو",
                             quantity = item.quantity,
                             unitPurchaseCost = item.unitPurchaseCost,
                             unitSellingPrice = item.unitSellingPrice,
@@ -1083,13 +1172,15 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     }
                 } else {
+                    val itemsOnlyCost = (orderToEdit.costPrice - orderToEdit.extraPrepCost).coerceAtLeast(0.0)
                     listOf(
                         DraftOrderLineItem(
                             productId = null,
                             productNameSnapshot = orderToEdit.itemsDescription.ifBlank { "أوردر" },
                             quantity = 1.0,
-                            unitPurchaseCost = orderToEdit.costPrice,
-                            unitSellingPrice = orderToEdit.salePrice
+                            unitPurchaseCost = itemsOnlyCost,
+                            unitSellingPrice = orderToEdit.salePrice,
+                            isTotalCostForWholeQty = true
                         )
                     )
                 }
@@ -1107,7 +1198,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun showOrderDetails(order: Order?) {
-        _selectedOrderDetails.value = order
+        _selectedOrderId.value = order?.id
     }
 
     fun saveMultiProductOrder(
@@ -1119,13 +1210,18 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         status: String,
         paymentStatus: String,
         notes: String,
+        extraPrepCost: Double = 0.0,
+        extraPrepNotes: String = "",
         deliveryDate: Long = 0L,
         paidAmount: Double = 0.0,
         deliveryAddress: String = ""
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             val existingOrder = if (id > 0L) _editingOrder.value else null
-            val totalPurchase = lineItems.sumOf { it.totalPurchaseCost }
+            val cleanExtraPrepCost = extraPrepCost.coerceAtLeast(0.0)
+            val cleanExtraPrepNotes = extraPrepNotes.trim()
+            val itemsPurchaseCost = lineItems.sumOf { it.totalPurchaseCost }
+            val totalPurchase = itemsPurchaseCost + cleanExtraPrepCost
             val totalSelling = lineItems.sumOf { it.totalSellingPrice }
             val grossProfit = totalSelling - totalPurchase
             val summaryDesc = lineItems.joinToString("، ") { item ->
@@ -1158,7 +1254,9 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                 userId = existingOrder?.userId.orEmpty(),
                 deliveryZone = existingOrder?.deliveryZone.orEmpty(),
                 shippingFee = existingOrder?.shippingFee ?: 0.0,
-                isRated = existingOrder?.isRated ?: false
+                isRated = existingOrder?.isRated ?: false,
+                extraPrepCost = cleanExtraPrepCost,
+                extraPrepNotes = cleanExtraPrepNotes
             )
 
             val entities = lineItems.map { draft ->
@@ -1181,9 +1279,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             cloudSyncManager.pushAdminOrderToCloud(order.copy(id = savedId), entities)
 
             withContext(Dispatchers.Main) {
-                if (_selectedOrderDetails.value?.id == id && id > 0L) {
-                    _selectedOrderDetails.value = order.copy(id = savedId)
-                }
                 closeOrderDialog()
                 _celebrationMessage.value = if (id == 0L) {
                     "تم تسجيل الأوردر ومزامنته مع كل الأجهزة بنجاح!"
@@ -1201,8 +1296,8 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                 cloudSyncManager.deleteOrderFromCloud(order.cloudId)
             }
             withContext(Dispatchers.Main) {
-                if (_selectedOrderDetails.value?.id == order.id) {
-                    _selectedOrderDetails.value = null
+                if (_selectedOrderId.value == order.id) {
+                    _selectedOrderId.value = null
                 }
                 _uiMessage.value = "تم حذف الأوردر نهائياً من جميع الأجهزة والسحابة"
             }
@@ -1221,11 +1316,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             if (order.cloudId.isNotBlank()) {
                 cloudSyncManager.updateOrderStatusInCloud(order.cloudId, nextStatus)
             }
-            withContext(Dispatchers.Main) {
-                if (_selectedOrderDetails.value?.id == order.id) {
-                    _selectedOrderDetails.value = updated
-                }
-            }
         }
     }
 
@@ -1242,11 +1332,6 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             if (order.cloudId.isNotBlank()) {
                 cloudSyncManager.updateOrderPaymentInCloud(order.cloudId, nextPayment, nextPaid)
             }
-            withContext(Dispatchers.Main) {
-                if (_selectedOrderDetails.value?.id == order.id) {
-                    _selectedOrderDetails.value = updated
-                }
-            }
         }
     }
 
@@ -1255,11 +1340,16 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val currentCount = categories.value.size
             if (id == 0L) {
-                businessRepository.insertCategory(CategoryEntity(name = name.trim(), sortOrder = currentCount))
+                val cat = CategoryEntity(name = name.trim(), sortOrder = currentCount)
+                val newId = businessRepository.insertCategory(cat)
+                cloudSyncManager.pushCategoryToCloud(cat.copy(id = newId))
             } else {
                 val existing = categories.value.find { it.id == id }
+                    ?: businessRepository.getCategoryByIdOnce(id)
                 if (existing != null) {
-                    businessRepository.updateCategory(existing.copy(name = name.trim()))
+                    val updated = existing.copy(name = name.trim())
+                    businessRepository.updateCategory(updated)
+                    cloudSyncManager.pushCategoryToCloud(updated)
                 }
             }
         }
@@ -1267,11 +1357,21 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteCategory(category: CategoryEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            val prodIds = products.value.filter { it.categoryId == category.id }.map { it.id }
+            val prodIds = businessRepository.getAllProductsOnce()
+                .filter { it.categoryId == category.id }
+                .map { it.id }
             productImages.value.filter { it.productId in prodIds }.forEach {
                 ImageStorageUtils.deleteStoredFile(it.imagePath)
             }
+            val linkedMenuIds = businessRepository.getAllMenuItemsOnce()
+                .filter { it.productId != null && it.productId in prodIds }
+                .map { it.id }
+            linkedMenuIds.forEach { menuId ->
+                businessRepository.deleteMenuItemById(menuId)
+                cloudSyncManager.deleteMenuItemFromCloud(menuId)
+            }
             businessRepository.deleteCategory(category)
+            cloudSyncManager.deleteCategoryFromCloud(category.id, prodIds)
         }
     }
 
@@ -1292,18 +1392,18 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             val cleanDesc = description.trim()
             if (id == 0L) {
                 val sortOrder = products.value.count { it.categoryId == categoryId }
-                val newProdId = businessRepository.insertProduct(
-                    ProductEntity(
-                        name = cleanName,
-                        categoryId = categoryId,
-                        unit = cleanUnit,
-                        description = cleanDesc,
-                        purchaseCost = purchaseCost,
-                        defaultSellingPrice = defaultSellingPrice,
-                        isActive = isActive,
-                        sortOrder = sortOrder
-                    )
+                val newProduct = ProductEntity(
+                    name = cleanName,
+                    categoryId = categoryId,
+                    unit = cleanUnit,
+                    description = cleanDesc,
+                    purchaseCost = purchaseCost,
+                    defaultSellingPrice = defaultSellingPrice,
+                    isActive = isActive,
+                    sortOrder = sortOrder
                 )
+                val newProdId = businessRepository.insertProduct(newProduct)
+                cloudSyncManager.pushProductToCloud(newProduct.copy(id = newProdId))
                 val catName = categories.value.find { it.id == categoryId }?.name
                 val targetMenuCatId = menuCategories.value.find { it.name == catName }?.id
                     ?: menuCategories.value.firstOrNull()?.id
@@ -1325,18 +1425,19 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                 }
             } else {
                 val existing = products.value.find { it.id == id }
+                    ?: businessRepository.getProductByIdOnce(id)
                 if (existing != null) {
-                    businessRepository.updateProduct(
-                        existing.copy(
-                            name = cleanName,
-                            categoryId = categoryId,
-                            unit = cleanUnit,
-                            description = cleanDesc,
-                            purchaseCost = purchaseCost,
-                            defaultSellingPrice = defaultSellingPrice,
-                            isActive = isActive
-                        )
+                    val updatedProduct = existing.copy(
+                        name = cleanName,
+                        categoryId = categoryId,
+                        unit = cleanUnit,
+                        description = cleanDesc,
+                        purchaseCost = purchaseCost,
+                        defaultSellingPrice = defaultSellingPrice,
+                        isActive = isActive
                     )
+                    businessRepository.updateProduct(updatedProduct)
+                    cloudSyncManager.pushProductToCloud(updatedProduct)
                     businessRepository.getMenuItemByProductIdOnce(existing.id)?.let { linkedMenu ->
                         businessRepository.updateMenuItem(
                             linkedMenu.copy(
@@ -1358,7 +1459,9 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleProductActive(product: ProductEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             val nextActive = !product.isActive
-            businessRepository.updateProduct(product.copy(isActive = nextActive))
+            val updated = product.copy(isActive = nextActive)
+            businessRepository.updateProduct(updated)
+            cloudSyncManager.pushProductToCloud(updated)
             businessRepository.getMenuItemByProductIdOnce(product.id)?.let { linked ->
                 businessRepository.updateMenuItem(linked.copy(isVisible = nextActive))
                 autoSyncMenuIfConfigured()
@@ -1373,9 +1476,10 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             }
             businessRepository.getMenuItemByProductIdOnce(product.id)?.let { linked ->
                 businessRepository.deleteMenuItem(linked)
-                autoSyncMenuIfConfigured()
+                cloudSyncManager.deleteMenuItemFromCloud(linked.id)
             }
             businessRepository.deleteProduct(product)
+            cloudSyncManager.deleteProductFromCloud(product.id)
         }
     }
 
@@ -1494,8 +1598,11 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteMenuCategory(category: MenuCategoryEntity) {
         viewModelScope.launch(Dispatchers.IO) {
+            val childItemIds = businessRepository.getAllMenuItemsOnce()
+                .filter { it.menuCategoryId == category.id }
+                .map { it.id }
             businessRepository.deleteMenuCategory(category)
-            autoSyncMenuIfConfigured()
+            cloudSyncManager.deleteMenuCategoryFromCloud(category.id, childItemIds)
         }
     }
 
@@ -1580,14 +1687,14 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             businessRepository.updateMenuItem(item)
             item.productId?.let { pid ->
                 products.value.find { it.id == pid }?.let { linkedProd ->
-                    businessRepository.updateProduct(
-                        linkedProd.copy(
-                            name = item.displayName,
-                            unit = item.unitLabel,
-                            description = item.description,
-                            defaultSellingPrice = item.publishedPrice
-                        )
+                    val updatedProd = linkedProd.copy(
+                        name = item.displayName,
+                        unit = item.unitLabel,
+                        description = item.description,
+                        defaultSellingPrice = item.publishedPrice
                     )
+                    businessRepository.updateProduct(updatedProd)
+                    cloudSyncManager.pushProductToCloud(updatedProd)
                 }
             }
             autoSyncMenuIfConfigured()
@@ -1611,7 +1718,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteMenuItem(item: MenuItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             businessRepository.deleteMenuItem(item)
-            autoSyncMenuIfConfigured()
+            cloudSyncManager.deleteMenuItemFromCloud(item.id)
         }
     }
 
@@ -1741,7 +1848,10 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             appendLine("📅 *شهر:* $monthArabic")
             appendLine("━━━━━━━━━━━━━━━━━━")
             appendLine("💰 *إجمالي المبيعات:* ${DateUtils.formatCurrency(stats.totalSales)}")
-            appendLine("🛒 *إجمالي تكلفة الشراء:* ${DateUtils.formatCurrency(stats.totalPurchaseCost)}")
+            appendLine("🛒 *إجمالي تكلفة الشراء والتجهيز:* ${DateUtils.formatCurrency(stats.totalPurchaseCost)}")
+            if (stats.totalExtraPrepCost > 0.0) {
+                appendLine("🧂 *منها تكاليف تجهيز وخامات مساعدة:* ${DateUtils.formatCurrency(stats.totalExtraPrepCost)}")
+            }
             appendLine("💵 *إجمالي الربح (قبل المصاريف):* ${DateUtils.formatCurrency(stats.grossProfitBeforeExpenses)}")
             appendLine("🧾 *المصاريف المنفصلة:* ${DateUtils.formatCurrency(stats.totalExpenses)}")
             appendLine("✨ *صافي الربح النهائي:* ${DateUtils.formatCurrency(stats.grossProfitBeforeExpenses - stats.totalExpenses)}")

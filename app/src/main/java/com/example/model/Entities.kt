@@ -133,7 +133,7 @@ data class OrderLineItemEntity(
     val totalPurchaseCost: Double = 0.0,
     val totalSellingPrice: Double = 0.0,
     val itemGrossProfit: Double = 0.0,
-    val isTotalCostForWholeQty: Boolean = false
+    val isTotalCostForWholeQty: Boolean = true
 )
 
 @Entity(

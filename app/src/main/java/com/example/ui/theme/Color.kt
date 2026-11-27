@@ -5,91 +5,96 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 // ======================================================
-// 1. Royal Bistro Dark Mode: Deep Espresso & Saffron Gold
+// 1. Clean Warm Light Luxury Palette (#F7F6F2, #FFFFFF, #EAE6DF, #8B2635, #C59B27)
 // ======================================================
-val ObsidianBg = Color(0xFF0C0A09)                 // Rich warm espresso-black canvas
-val ObsidianBgEnd = Color(0xFF14110F)              // Subtle warm roasted depth end
-val VelvetCardSurface = Color(0xFF181512)          // Elevated warm dark card surface
-val VelvetGlassOverlay = Color(0xE61C1815)         // Frosted warm glass surface
-val VelvetSecondarySurface = Color(0xFF231F1B)     // Input / pill / nested container surface
-val VelvetSubtleBorder = Color(0xFF312B25)         // Crisp 1dp warm bronze border
-val VelvetGlassBorder = Color(0x4DFF922B)          // Subtle saffron-tinted glass border
-val VelvetDockGlass = Color(0xF5151210)            // Floating bottom dock surface
+val LightBg = Color(0xFFF7F6F2)                    // Clean warm alabaster background (#F7F6F2)
+val LightCardSurface = Color(0xFFFFFFFF)           // Pure crisp white cards (#FFFFFF)
+val LightSecondarySurface = Color(0xFFF2EFE9)      // Warm linen chip/input surface
+val LightBorder = Color(0xFFEAE6DF)                // Thin subtle warm border (#EAE6DF)
+val LightDockSurface = Color(0xFCFFFFFF)           // Clean floating dock surface
 
-val SaffronAmberPrimary = Color(0xFFFF8A1E)        // Vibrant saffron-orange signature accent
-val SaffronAmberDeep = Color(0xFFD96400)           // Deep caramelized amber
-val HoneyGoldHighlight = Color(0xFFFFC145)         // Warm honey gold for badges, ratings & highlights
-val MintEmeraldProfit = Color(0xFF22C58B)          // Fresh emerald for profit, live kitchen & success
-val CrispOffWhiteText = Color(0xFFFAF6F0)          // Warm ivory-white high-contrast text
-val CoolSlateSecondaryText = Color(0xFFB5ABA0)     // Warm stone secondary text
+val LightPrimaryBrand = Color(0xFF8B2635)          // Royal burgundy primary (#8B2635)
+val LightPrimaryDeep = Color(0xFF6B1A26)           // Deep royal burgundy (#6B1A26)
+val LightSecondaryContainer = Color(0xFFF9ECEE)    // Soft warm rose-cream container
+val LightOnSecondaryContainer = Color(0xFF6B1A26)  // Deep burgundy text on container
 
-val DarkSaffronContainer = Color(0xFF2D1E11)
-val DarkGoldContainer = Color(0xFF2B2212)
-val DarkEmeraldContainer = Color(0xFF102A21)
-val DarkEmeraldOnContainer = Color(0xFF86EFAC)
+val LightTextPrimary = Color(0xFF1F1D1B)           // Warm espresso charcoal (#1F1D1B)
+val LightTextSecondary = Color(0xFF6E6A64)         // Calm warm gray-taupe (#6E6A64)
 
-// ======================================================
-// 2. Royal Bistro Light Mode: Warm Linen & Terracotta
-// ======================================================
-val AlabasterBg = Color(0xFFFAF7F2)                // Warm cream-linen scaffold
-val AlabasterBgEnd = Color(0xFFF2ECE1)             // Soft warm sand gradient end
-val PureCrispWhite = Color(0xFFFFFFFF)             // Crisp elevated card surface
-val SilkSecondarySurface = Color(0xFFF3EDE4)       // Soft sand input & chip surface
-val SilkBorder = Color(0xFFE5DDD0)                 // Clean warm border
-val SilkDockGlass = Color(0xFAFFFFFF)
-
-val TerracottaPrimary = Color(0xFFE05300)          // Rich clay-terracotta primary accent
-val TerracottaDeep = Color(0xFFB83B00)
-val ApricotGoldAccent = Color(0xFFF59E0B)
-val MintBasilSuccess = Color(0xFF15805D)
-
-val EspressoInkText = Color(0xFF1C1714)            // Deep roasted espresso ink text
-val WarmTaupeText = Color(0xFF665B52)              // Balanced warm taupe secondary text
-
-val LightTerracottaContainer = Color(0xFFFFEDE2)
-val LightApricotContainer = Color(0xFFFFF5DC)
-val LightBasilContainer = Color(0xFFDCFCE7)
+val LightSuccessContainer = Color(0xFFEAF5ED)      // Soft emerald tint
+val LightOnSuccessContainer = Color(0xFF1B6430)    // Deep emerald text
+val LightWarningContainer = Color(0xFFFBF5E4)      // Soft warm gold tint
+val LightWarningText = Color(0xFF8C6B11)           // High-contrast warm gold-ochre text
+val LightErrorContainer = Color(0xFFFCECEC)        // Soft calm red tint
+val LightOnErrorContainer = Color(0xFF9E1C1C)      // Deep red text
 
 // ======================================================
-// Backward-compatible semantic aliases (preserved across all screens)
+// 2. Clean Dark Mode Palette (Charcoal-Black & Soft Burgundy-Rose, zero purple/blue)
 // ======================================================
-val EspressoDeepBg = ObsidianBg
-val EspressoCharcoalEnd = ObsidianBgEnd
-val EspressoCardSurface = VelvetCardSurface
-val EspressoGlassOverlay = VelvetGlassOverlay
-val EspressoSecondarySurface = VelvetSecondarySurface
-val EspressoGlassBorder = VelvetGlassBorder
-val EspressoSubtleBorder = VelvetSubtleBorder
-val EspressoDockGlass = VelvetDockGlass
-val SaffronOrangeGlow = SaffronAmberPrimary
-val SaffronDeepFlame = SaffronAmberDeep
-val WarmAmberGold = HoneyGoldHighlight
-val WarmIvoryText = CrispOffWhiteText
-val WarmSandText = CoolSlateSecondaryText
-val WarmIvoryBg = AlabasterBg
-val LightWarmLinen = SilkSecondarySurface
-val LightSandBorder = SilkBorder
-val LightDockGlass = SilkDockGlass
+val DarkBg = Color(0xFF121316)                     // Deep charcoal black (#121316)
+val DarkCardSurface = Color(0xFF1C1E22)            // Elevated dark slate-charcoal (#1C1E22)
+val DarkSecondarySurface = Color(0xFF24272C)       // Nested input/chip surface
+val DarkBorder = Color(0xFF2C2F36)                 // Subtle dark border (#2C2F36)
+val DarkDockSurface = Color(0xFA1C1E22)            // Clean floating dark dock
 
-val TomatoCoralPrimary = TerracottaPrimary
-val TomatoCoralDeep = TerracottaDeep
-val ApricotSaffronSecondary = SaffronAmberPrimary
-val GoldBadgeHighlight = HoneyGoldHighlight
-val TomatoRedPrimary = TerracottaPrimary
-val SaffronOrangeSecondary = SaffronAmberPrimary
-val GoldHighlight = HoneyGoldHighlight
+val DarkPrimaryBrand = Color(0xFFD96574)           // Balanced warm rose-burgundy (#D96574)
+val DarkPrimaryDeep = Color(0xFF8B2635)            // Rich burgundy accent
+val DarkSecondaryContainer = Color(0xFF2B191D)     // Calm dark burgundy container
+val DarkOnSecondaryContainer = Color(0xFFF4A8B2)   // Soft rose text on container
+
+val DarkTextPrimary = Color(0xFFF1F3F5)            // Soft crisp off-white (#F1F3F5)
+val DarkTextSecondary = Color(0xFFADB5BD)          // Clean light gray (#ADB5BD)
+
+val DarkSuccessContainer = Color(0xFF172B1E)       // Calm dark emerald container
+val DarkOnSuccessContainer = Color(0xFF7BE098)     // Readable mint-emerald text
+val DarkWarningContainer = Color(0xFF2B2413)       // Calm dark gold container
+val DarkWarningText = Color(0xFFE6C15A)            // Luminous warm gold text
+val DarkErrorContainer = Color(0xFF2F181A)         // Calm dark red container
+val DarkOnErrorContainer = Color(0xFFF88B8B)       // Readable calm red text
+
+// ======================================================
+// 3. Fixed Semantic Status & Luxury Gold Colors
+// ======================================================
+val StatusSuccessEmerald = Color(0xFF2B9348)       // Success / Open / Delivered (#2B9348)
+val StatusWarningAmber = Color(0xFFC59B27)         // Luxury Gold / Preparing (#C59B27)
+val StatusErrorRed = Color(0xFFD62828)             // Cancelled / Closed (#D62828)
+
+// ======================================================
+// Backward-compatible semantic aliases (preserved across codebase)
+// ======================================================
+val AlabasterBg = LightBg
+val AlabasterBgEnd = LightBg
+val PureCrispWhite = LightCardSurface
+val SilkSecondarySurface = LightSecondarySurface
+val SilkBorder = LightBorder
+val SilkDockGlass = LightDockSurface
+
+val TerracottaPrimary = LightPrimaryBrand
+val TerracottaDeep = LightPrimaryDeep
+val ApricotGoldAccent = StatusWarningAmber
+val GoldTextOnLight = LightWarningText
+val MintBasilSuccess = StatusSuccessEmerald
+val EspressoInkText = LightTextPrimary
+val WarmTaupeText = LightTextSecondary
+
+val ObsidianBg = DarkBg
+val ObsidianBgEnd = DarkBg
+val VelvetCardSurface = DarkCardSurface
+val VelvetSecondarySurface = DarkSecondarySurface
+val VelvetSubtleBorder = DarkBorder
+val VelvetDockGlass = DarkDockSurface
+val SaffronAmberPrimary = DarkPrimaryBrand
+val SaffronAmberDeep = DarkPrimaryDeep
+val HoneyGoldHighlight = StatusWarningAmber
+val HoneyGoldTextDark = DarkWarningText
+val MintEmeraldProfit = StatusSuccessEmerald
+val CrispOffWhiteText = DarkTextPrimary
+val CoolSlateSecondaryText = DarkTextSecondary
+
 val CleanWhite = Color(0xFFFFFFFF)
-val BrandRedPrimary = SaffronAmberPrimary
-val EmeraldProfit = MintEmeraldProfit
-val WarmOrangeHighlight = HoneyGoldHighlight
-val CharcoalBlackBg = ObsidianBg
-val CharcoalCardSurface = VelvetCardSurface
-val CharcoalCardElevated = VelvetSecondarySurface
-val CharcoalCardBorder = VelvetSubtleBorder
-val EmeraldProfitContainer = DarkEmeraldContainer
-val EmeraldProfitOnContainer = DarkEmeraldOnContainer
-val TextWhitePrimary = CrispOffWhiteText
-val TextWhiteSecondary = CoolSlateSecondaryText
+val BrandRedPrimary = LightPrimaryBrand
+val EmeraldProfit = StatusSuccessEmerald
+val WarmOrangeHighlight = StatusWarningAmber
 
 @Immutable
 data class AppSemanticColors(
@@ -110,92 +115,109 @@ data class AppSemanticColors(
     val secondaryAccent: Color,
     val secondaryContainer: Color,
     val goldAccent: Color,
+    val goldText: Color,
     val profitGreen: Color,
     val profitContainer: Color,
     val onProfitContainer: Color,
+    val errorRed: Color,
+    val errorContainer: Color,
+    val onErrorContainer: Color,
     val textPrimary: Color,
     val textSecondary: Color,
+    val softShadow: Color,
     val heroGradient: Brush,
     val warmAccentGradient: Brush,
     val mintGradient: Brush,
     val cardHighlightGradient: Brush,
-    val onAccentText: Color = Color.White
+    val onAccentText: Color
 )
 
 val LightAppSemanticColors = AppSemanticColors(
     isDark = false,
-    background = AlabasterBg,
-    backgroundEnd = AlabasterBgEnd,
+    background = LightBg,
+    backgroundEnd = LightBg,
     backgroundGradient = Brush.verticalGradient(
-        colors = listOf(AlabasterBg, AlabasterBgEnd)
+        colors = listOf(LightBg, LightBg)
     ),
-    cardSurface = PureCrispWhite,
-    glassSurface = Color(0xF7FFFFFF),
-    secondarySurface = SilkSecondarySurface,
-    cardBorder = SilkBorder,
-    glassBorder = Color(0x4DE05300),
-    floatingDock = SilkDockGlass,
-    primaryBrand = TerracottaPrimary,
-    primaryDeep = TerracottaDeep,
-    primaryContainer = LightTerracottaContainer,
-    onPrimaryContainer = TerracottaDeep,
-    secondaryAccent = SaffronAmberPrimary,
-    secondaryContainer = LightApricotContainer,
-    goldAccent = ApricotGoldAccent,
-    profitGreen = MintBasilSuccess,
-    profitContainer = LightBasilContainer,
-    onProfitContainer = Color(0xFF0F5C43),
-    textPrimary = EspressoInkText,
-    textSecondary = WarmTaupeText,
-    heroGradient = Brush.linearGradient(
-        colors = listOf(Color(0xFFE05300), Color(0xFFF26E1B), Color(0xFFB83B00))
+    cardSurface = LightCardSurface,
+    glassSurface = Color(0xFAFFFFFF),
+    secondarySurface = LightSecondarySurface,
+    cardBorder = LightBorder,
+    glassBorder = LightBorder,
+    floatingDock = LightDockSurface,
+    primaryBrand = LightPrimaryBrand,
+    primaryDeep = LightPrimaryDeep,
+    primaryContainer = LightSecondaryContainer,
+    onPrimaryContainer = LightOnSecondaryContainer,
+    secondaryAccent = StatusWarningAmber,
+    secondaryContainer = LightWarningContainer,
+    goldAccent = StatusWarningAmber,
+    goldText = LightWarningText,
+    profitGreen = StatusSuccessEmerald,
+    profitContainer = LightSuccessContainer,
+    onProfitContainer = LightOnSuccessContainer,
+    errorRed = StatusErrorRed,
+    errorContainer = LightErrorContainer,
+    onErrorContainer = LightOnErrorContainer,
+    textPrimary = LightTextPrimary,
+    textSecondary = LightTextSecondary,
+    softShadow = Color(0x141F1D1B),
+    heroGradient = Brush.verticalGradient(
+        colors = listOf(LightPrimaryBrand, Color(0xFF721D2A))
     ),
     warmAccentGradient = Brush.horizontalGradient(
-        colors = listOf(TerracottaPrimary, ApricotGoldAccent)
+        colors = listOf(LightPrimaryBrand, LightPrimaryBrand)
     ),
     mintGradient = Brush.horizontalGradient(
-        colors = listOf(MintBasilSuccess, Color(0xFF22A077))
+        colors = listOf(StatusSuccessEmerald, StatusSuccessEmerald)
     ),
     cardHighlightGradient = Brush.verticalGradient(
-        colors = listOf(Color(0xFFFFFFFF), Color(0xFFFCF8F2))
-    )
+        colors = listOf(LightCardSurface, LightCardSurface)
+    ),
+    onAccentText = Color.White
 )
 
 val DarkAppSemanticColors = AppSemanticColors(
     isDark = true,
-    background = ObsidianBg,
-    backgroundEnd = ObsidianBgEnd,
+    background = DarkBg,
+    backgroundEnd = DarkBg,
     backgroundGradient = Brush.verticalGradient(
-        colors = listOf(ObsidianBg, ObsidianBgEnd, ObsidianBg)
+        colors = listOf(DarkBg, DarkBg)
     ),
-    cardSurface = VelvetCardSurface,
-    glassSurface = VelvetGlassOverlay,
-    secondarySurface = VelvetSecondarySurface,
-    cardBorder = VelvetSubtleBorder,
-    glassBorder = VelvetGlassBorder,
-    floatingDock = VelvetDockGlass,
-    primaryBrand = SaffronAmberPrimary,
-    primaryDeep = SaffronAmberDeep,
-    primaryContainer = DarkSaffronContainer,
-    onPrimaryContainer = Color(0xFFFFCE9E),
-    secondaryAccent = HoneyGoldHighlight,
-    secondaryContainer = DarkGoldContainer,
-    goldAccent = HoneyGoldHighlight,
-    profitGreen = MintEmeraldProfit,
-    profitContainer = DarkEmeraldContainer,
-    onProfitContainer = DarkEmeraldOnContainer,
-    textPrimary = CrispOffWhiteText,
-    textSecondary = CoolSlateSecondaryText,
-    heroGradient = Brush.linearGradient(
-        colors = listOf(Color(0xFF261E18), Color(0xFF191512), Color(0xFF3A2110))
+    cardSurface = DarkCardSurface,
+    glassSurface = Color(0xF51C1E22),
+    secondarySurface = DarkSecondarySurface,
+    cardBorder = DarkBorder,
+    glassBorder = DarkBorder,
+    floatingDock = DarkDockSurface,
+    primaryBrand = DarkPrimaryBrand,
+    primaryDeep = DarkPrimaryDeep,
+    primaryContainer = DarkSecondaryContainer,
+    onPrimaryContainer = DarkOnSecondaryContainer,
+    secondaryAccent = StatusWarningAmber,
+    secondaryContainer = DarkWarningContainer,
+    goldAccent = StatusWarningAmber,
+    goldText = DarkWarningText,
+    profitGreen = StatusSuccessEmerald,
+    profitContainer = DarkSuccessContainer,
+    onProfitContainer = DarkOnSuccessContainer,
+    errorRed = StatusErrorRed,
+    errorContainer = DarkErrorContainer,
+    onErrorContainer = DarkOnErrorContainer,
+    textPrimary = DarkTextPrimary,
+    textSecondary = DarkTextSecondary,
+    softShadow = Color(0x45000000),
+    heroGradient = Brush.verticalGradient(
+        colors = listOf(Color(0xFF2B191D), DarkCardSurface)
     ),
     warmAccentGradient = Brush.horizontalGradient(
-        colors = listOf(SaffronAmberPrimary, HoneyGoldHighlight)
+        colors = listOf(DarkPrimaryBrand, DarkPrimaryBrand)
     ),
     mintGradient = Brush.horizontalGradient(
-        colors = listOf(MintEmeraldProfit, Color(0xFF179B6C))
+        colors = listOf(StatusSuccessEmerald, StatusSuccessEmerald)
     ),
     cardHighlightGradient = Brush.verticalGradient(
-        colors = listOf(Color(0xFF1E1A16), Color(0xFF151210))
-    )
+        colors = listOf(DarkCardSurface, DarkCardSurface)
+    ),
+    onAccentText = DarkBg
 )

@@ -84,9 +84,12 @@ data class Order(
     val userId: String = "",
     val deliveryZone: String = "",
     val shippingFee: Double = 0.0,
-    val isRated: Boolean = false
+    val isRated: Boolean = false,
+    val extraPrepCost: Double = 0.0,
+    val extraPrepNotes: String = ""
 ) {
     val isFromCustomer: Boolean get() = orderSource == OrderSource.CUSTOMER.name
+    val itemsCostPrice: Double get() = (costPrice - extraPrepCost).coerceAtLeast(0.0)
     val totalWithShipping: Double get() = salePrice + shippingFee
     val effectivePaidAmount: Double
         get() = when (paymentStatus) {

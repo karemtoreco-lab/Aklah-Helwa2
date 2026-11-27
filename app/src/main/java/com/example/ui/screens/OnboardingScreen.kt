@@ -253,7 +253,7 @@ fun OnboardingScreen(
                                 text = badge,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = colors.goldAccent,
+                                color = colors.goldText,
                                 modifier = Modifier.padding(horizontal = 11.dp, vertical = 4.dp)
                             )
                         }
@@ -291,7 +291,7 @@ fun OnboardingScreen(
                                     .background(colors.warmAccentGradient),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Restaurant, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Restaurant, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(18.dp))
                             }
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
@@ -389,10 +389,10 @@ fun OnboardingScreen(
                                     text = "ابدأ الطلب الآن",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = Color.White
+                                    color = colors.onAccentText
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color.White)
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = colors.onAccentText)
                             }
                         }
                     }

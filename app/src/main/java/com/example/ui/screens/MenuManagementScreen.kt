@@ -245,7 +245,7 @@ fun MenuManagementScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand)
                 ) {
-                    Text("إزالة من المنيو", color = Color.White)
+                    Text("إزالة من المنيو", color = colors.onAccentText)
                 }
             },
             dismissButton = {
@@ -322,9 +322,9 @@ fun MenuManagementScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Download, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
+                            Icon(Icons.Default.Download, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(19.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("حفظ وتصدير المنيو", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("حفظ وتصدير المنيو", color = colors.onAccentText, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
                     }
                 }
@@ -485,7 +485,7 @@ fun MenuManagementScreen(
                                     ) {
                                         Text(
                                             text = "${cat.name} (${catItems.size})",
-                                            color = Color.White,
+                                            color = colors.onAccentText,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp,
                                             maxLines = 1,
@@ -625,7 +625,7 @@ fun MenuManagementScreen(
                                                             } else {
                                                                 DateUtils.formatCurrency(item.publishedPrice)
                                                             },
-                                                            color = Color.White,
+                                                            color = colors.onAccentText,
                                                             fontWeight = FontWeight.Bold,
                                                             fontSize = 11.sp,
                                                             modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)

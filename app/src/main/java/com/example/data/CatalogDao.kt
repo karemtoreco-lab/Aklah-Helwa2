@@ -21,17 +21,26 @@ interface CatalogDao {
     @Query("SELECT * FROM categories ORDER BY sortOrder ASC, id ASC")
     suspend fun getAllCategoriesOnce(): List<CategoryEntity>
 
+    @Query("SELECT * FROM categories WHERE id = :id LIMIT 1")
+    suspend fun getCategoryByIdOnce(id: Long): CategoryEntity?
+
     @Query("SELECT COUNT(*) FROM categories")
     suspend fun getCategoryCount(): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCategory(category: CategoryEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCategories(categories: List<CategoryEntity>)
+
     @Update
     suspend fun updateCategory(category: CategoryEntity)
 
     @Delete
     suspend fun deleteCategory(category: CategoryEntity)
+
+    @Query("DELETE FROM categories WHERE id = :categoryId")
+    suspend fun deleteCategoryById(categoryId: Long)
 
     // Products
     @Query("SELECT * FROM products ORDER BY categoryId ASC, sortOrder ASC, id ASC")
@@ -42,6 +51,9 @@ interface CatalogDao {
 
     @Query("SELECT * FROM products ORDER BY categoryId ASC, sortOrder ASC, id ASC")
     suspend fun getAllProductsOnce(): List<ProductEntity>
+
+    @Query("SELECT * FROM products WHERE id = :id LIMIT 1")
+    suspend fun getProductByIdOnce(id: Long): ProductEntity?
 
     @Query("SELECT COUNT(*) FROM products")
     suspend fun getProductCount(): Int

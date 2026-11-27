@@ -66,6 +66,7 @@ import com.example.ui.components.CulinaryQuantityStepper
 import com.example.ui.components.DishPhotoCarousel
 import com.example.ui.components.bounceClick
 import com.example.ui.theme.AppTheme
+import com.example.ui.theme.LightTextPrimary
 import com.example.util.DateUtils
 import com.example.util.WhatsAppUtils
 import java.util.Locale
@@ -157,9 +158,9 @@ fun DishDetailsBottomSheet(
                                 modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.LocalFireDepartment, contentDescription = null, tint = Color(0xFF1A1614), modifier = Modifier.size(14.dp))
+                                Icon(Icons.Default.LocalFireDepartment, contentDescription = null, tint = LightTextPrimary, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("الأكثر طلباً", color = Color(0xFF1A1614), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+                                Text("الأكثر طلباً", color = LightTextPrimary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
                             }
                         }
                     } else {
@@ -185,7 +186,7 @@ fun DishDetailsBottomSheet(
                         Icon(
                             imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = if (isFavorite) "إزالة من المفضلة" else "إضافة للمفضلة",
-                            tint = if (isFavorite) Color(0xFFFF4D6D) else Color.White
+                            tint = if (isFavorite) colors.errorRed else Color.White
                         )
                     }
                 }
@@ -240,7 +241,7 @@ fun DishDetailsBottomSheet(
                             text = "$ratingText$countSuffix",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.ExtraBold,
-                            color = colors.goldAccent
+                            color = colors.goldText
                         )
                     }
                 }
@@ -292,7 +293,7 @@ fun DishDetailsBottomSheet(
                             text = if (menuItem.isPreOrder24h) "حجز مسبق 24 ساعة" else "جاهز للتسليم",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
-                            color = if (menuItem.isPreOrder24h) colors.goldAccent else colors.onProfitContainer
+                            color = if (menuItem.isPreOrder24h) colors.goldText else colors.onProfitContainer
                         )
                     }
                 }
@@ -352,7 +353,7 @@ fun DishDetailsBottomSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Icon(Icons.Default.ShoppingBag, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.ShoppingBag, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         val lineSubtotal = if (menuItem.isVariablePrice && menuItem.publishedPrice <= 0.0) {
                             ""
@@ -361,7 +362,7 @@ fun DishDetailsBottomSheet(
                         }
                         Text(
                             text = "أضف للسلة$lineSubtotal",
-                            color = Color.White,
+                            color = colors.onAccentText,
                             fontWeight = FontWeight.ExtraBold
                         )
                     }

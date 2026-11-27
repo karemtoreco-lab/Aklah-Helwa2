@@ -13,54 +13,58 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 private val LightBrandColorScheme = lightColorScheme(
-    primary = TerracottaPrimary,
+    primary = LightPrimaryBrand,
     onPrimary = Color.White,
-    primaryContainer = LightTerracottaContainer,
-    onPrimaryContainer = TerracottaDeep,
-    secondary = SaffronAmberPrimary,
-    onSecondary = EspressoInkText,
-    secondaryContainer = SilkSecondarySurface,
-    onSecondaryContainer = EspressoInkText,
-    tertiary = MintBasilSuccess,
+    primaryContainer = LightSecondaryContainer,
+    onPrimaryContainer = LightOnSecondaryContainer,
+    secondary = StatusWarningAmber,
+    onSecondary = LightTextPrimary,
+    secondaryContainer = LightSecondaryContainer,
+    onSecondaryContainer = LightOnSecondaryContainer,
+    tertiary = StatusSuccessEmerald,
     onTertiary = Color.White,
-    tertiaryContainer = LightBasilContainer,
-    onTertiaryContainer = Color(0xFF0F5C43),
-    background = AlabasterBg,
-    onBackground = EspressoInkText,
-    surface = PureCrispWhite,
-    onSurface = EspressoInkText,
-    surfaceVariant = SilkSecondarySurface,
-    onSurfaceVariant = WarmTaupeText,
-    outline = SilkBorder,
-    error = TerracottaDeep,
-    onError = Color.White
+    tertiaryContainer = LightSuccessContainer,
+    onTertiaryContainer = LightOnSuccessContainer,
+    background = LightBg,
+    onBackground = LightTextPrimary,
+    surface = LightCardSurface,
+    onSurface = LightTextPrimary,
+    surfaceVariant = LightSecondarySurface,
+    onSurfaceVariant = LightTextSecondary,
+    outline = LightBorder,
+    error = StatusErrorRed,
+    onError = Color.White,
+    errorContainer = LightErrorContainer,
+    onErrorContainer = LightOnErrorContainer
 )
 
 private val DarkBrandColorScheme = darkColorScheme(
-    primary = SaffronAmberPrimary,
-    onPrimary = Color.White,
-    primaryContainer = DarkSaffronContainer,
-    onPrimaryContainer = Color(0xFFFFCE9E),
-    secondary = HoneyGoldHighlight,
-    onSecondary = ObsidianBg,
-    secondaryContainer = VelvetSecondarySurface,
-    onSecondaryContainer = CrispOffWhiteText,
-    tertiary = MintEmeraldProfit,
-    onTertiary = ObsidianBg,
-    tertiaryContainer = DarkEmeraldContainer,
-    onTertiaryContainer = DarkEmeraldOnContainer,
-    background = ObsidianBg,
-    onBackground = CrispOffWhiteText,
-    surface = VelvetCardSurface,
-    onSurface = CrispOffWhiteText,
-    surfaceVariant = VelvetSecondarySurface,
-    onSurfaceVariant = CoolSlateSecondaryText,
-    outline = VelvetSubtleBorder,
-    error = Color(0xFFFF6B6B),
-    onError = Color.White
+    primary = DarkPrimaryBrand,
+    onPrimary = DarkBg,
+    primaryContainer = DarkSecondaryContainer,
+    onPrimaryContainer = DarkOnSecondaryContainer,
+    secondary = StatusWarningAmber,
+    onSecondary = DarkBg,
+    secondaryContainer = DarkSecondaryContainer,
+    onSecondaryContainer = DarkOnSecondaryContainer,
+    tertiary = StatusSuccessEmerald,
+    onTertiary = Color.White,
+    tertiaryContainer = DarkSuccessContainer,
+    onTertiaryContainer = DarkOnSuccessContainer,
+    background = DarkBg,
+    onBackground = DarkTextPrimary,
+    surface = DarkCardSurface,
+    onSurface = DarkTextPrimary,
+    surfaceVariant = DarkSecondarySurface,
+    onSurfaceVariant = DarkTextSecondary,
+    outline = DarkBorder,
+    error = StatusErrorRed,
+    onError = Color.White,
+    errorContainer = DarkErrorContainer,
+    onErrorContainer = DarkOnErrorContainer
 )
 
-val LocalAppColors = staticCompositionLocalOf { DarkAppSemanticColors }
+val LocalAppColors = staticCompositionLocalOf { LightAppSemanticColors }
 
 object AppTheme {
     val colors: AppSemanticColors
@@ -77,7 +81,7 @@ val AppShapes = Shapes(
 
 @Composable
 fun MyApplicationTheme(
-    darkTheme: Boolean = true,
+    darkTheme: Boolean = false,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {

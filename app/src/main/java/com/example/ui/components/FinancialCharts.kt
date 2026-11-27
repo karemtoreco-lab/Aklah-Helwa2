@@ -25,8 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.Timeline
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -67,38 +65,42 @@ fun SalesAndProfitChartCard(
     modifier: Modifier = Modifier
 ) {
     val colors = AppTheme.colors
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(1.dp, colors.cardBorder, RoundedCornerShape(22.dp))
-            .testTag("sales_profit_chart_card"),
-        colors = CardDefaults.cardColors(containerColor = colors.cardSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 3.dp),
-        shape = RoundedCornerShape(22.dp)
+    LuxuryCard(
+        modifier = modifier.testTag("sales_profit_chart_card"),
+        cornerRadius = 24.dp,
+        elevation = 4.dp
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(36.dp)
                             .clip(CircleShape)
-                            .background(colors.primaryContainer),
+                            .background(colors.primaryContainer)
+                            .border(1.dp, colors.primaryBrand.copy(alpha = 0.2f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.BarChart, contentDescription = null, tint = colors.primaryBrand, modifier = Modifier.size(18.dp))
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "منحنى المبيعات والأرباح",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = colors.textPrimary
-                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "منحنى المبيعات والأرباح",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = colors.textPrimary
+                        )
+                        Text(
+                            text = "تطور الإيراد والربح اليومي",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.textSecondary
+                        )
+                    }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     LegendDot("المبيعات", colors.primaryBrand)
@@ -133,10 +135,10 @@ fun SalesAndProfitChartCard(
                     progress = animProgress,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(155.dp)
+                        .height(160.dp)
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
@@ -152,8 +154,9 @@ fun SalesAndProfitChartCard(
                             Text(
                                 text = "يوم ${pt.dayNumber}",
                                 style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
                                 color = colors.textSecondary,
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
                     }
@@ -170,40 +173,44 @@ fun OrdersVolumeChartCard(
     modifier: Modifier = Modifier
 ) {
     val colors = AppTheme.colors
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(1.dp, colors.cardBorder, RoundedCornerShape(22.dp))
-            .testTag("orders_over_time_chart_card"),
-        colors = CardDefaults.cardColors(containerColor = colors.cardSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 3.dp),
-        shape = RoundedCornerShape(22.dp)
+    LuxuryCard(
+        modifier = modifier.testTag("orders_over_time_chart_card"),
+        cornerRadius = 24.dp,
+        elevation = 4.dp
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(36.dp)
                             .clip(CircleShape)
-                            .background(colors.secondaryContainer),
+                            .background(colors.secondaryContainer)
+                            .border(1.dp, colors.goldAccent.copy(alpha = 0.35f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Timeline, contentDescription = null, tint = colors.secondaryAccent, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Timeline, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(18.dp))
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "تدفق الأوردرات خلال الشهر",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = colors.textPrimary
-                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "تدفق الأوردرات خلال الشهر",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = colors.textPrimary
+                        )
+                        Text(
+                            text = "معدل الطلبات اليومية",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.textSecondary
+                        )
+                    }
                 }
-                LegendDot("عدد الأوردرات", colors.secondaryAccent)
+                LegendDot("عدد الأوردرات", colors.goldAccent)
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -225,13 +232,13 @@ fun OrdersVolumeChartCard(
 
                 CurvedSingleAreaChart(
                     values = orderedPoints.map { it.ordersCount.toFloat() },
-                    strokeColor = colors.secondaryAccent,
-                    dotColor = colors.goldAccent,
+                    strokeColor = colors.goldAccent,
+                    dotColor = colors.primaryBrand,
                     dotCenterColor = colors.cardSurface,
                     progress = animProgress,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(125.dp)
+                        .height(128.dp)
                 )
             }
         }
@@ -363,7 +370,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSmoothAreaAndLi
     drawPath(
         path = areaPath,
         brush = Brush.verticalGradient(
-            colors = listOf(lineColor.copy(alpha = 0.32f), lineColor.copy(alpha = 0.02f)),
+            colors = listOf(lineColor.copy(alpha = 0.25f), lineColor.copy(alpha = 0.02f)),
             startY = 0f,
             endY = baselineY
         )
@@ -372,7 +379,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSmoothAreaAndLi
     drawPath(
         path = linePath,
         color = lineColor,
-        style = Stroke(width = 5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        style = Stroke(width = 4.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
     )
 }
 
@@ -382,33 +389,37 @@ fun ProductPerformanceCard(
     modifier: Modifier = Modifier
 ) {
     val colors = AppTheme.colors
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(1.dp, colors.cardBorder, RoundedCornerShape(22.dp))
-            .testTag("product_performance_card"),
-        colors = CardDefaults.cardColors(containerColor = colors.cardSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 3.dp),
-        shape = RoundedCornerShape(22.dp)
+    LuxuryCard(
+        modifier = modifier.testTag("product_performance_card"),
+        cornerRadius = 24.dp,
+        elevation = 4.dp
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
-                        .background(colors.secondaryContainer),
+                        .background(colors.secondaryContainer)
+                        .border(1.dp, colors.goldAccent.copy(alpha = 0.35f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(Icons.Default.Leaderboard, contentDescription = null, tint = colors.goldAccent, modifier = Modifier.size(18.dp))
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "الأصناف الأكثر مبيعاً وأداءً",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = colors.textPrimary
-                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(
+                        text = "الأصناف الأكثر مبيعاً وأداءً",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = colors.textPrimary
+                    )
+                    Text(
+                        text = "ترتيب الأطباق حسب الكمية والربح",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.textSecondary
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(14.dp))
 
@@ -419,12 +430,12 @@ fun ProductPerformanceCard(
                 var animateBars by remember { mutableStateOf(false) }
                 LaunchedEffect(topProducts) { animateBars = true }
 
-                Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     topProducts.take(6).forEachIndexed { index, prod ->
                         val targetRatio = (prod.totalQuantity / maxQty).toFloat().coerceIn(0.08f, 1f)
                         val ratio by animateFloatAsState(
                             targetValue = if (animateBars) targetRatio else 0.05f,
-                            animationSpec = tween(600, easing = FastOutSlowInEasing),
+                            animationSpec = tween(620, easing = FastOutSlowInEasing),
                             label = "qty_bar"
                         )
                         val qtyText = if (prod.totalQuantity % 1.0 == 0.0) {
@@ -433,7 +444,7 @@ fun ProductPerformanceCard(
                             prod.totalQuantity.toString()
                         }
                         val rankColor = when (index) {
-                            0 -> colors.goldAccent
+                            0 -> colors.goldText
                             1 -> colors.primaryBrand
                             2 -> colors.profitGreen
                             else -> colors.textSecondary
@@ -451,10 +462,10 @@ fun ProductPerformanceCard(
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(22.dp)
+                                            .size(24.dp)
                                             .clip(CircleShape)
-                                            .background(rankColor.copy(alpha = 0.16f))
-                                            .border(1.dp, rankColor.copy(alpha = 0.4f), CircleShape),
+                                            .background(rankColor.copy(alpha = 0.14f))
+                                            .border(1.dp, rankColor.copy(alpha = 0.35f), CircleShape),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
@@ -478,33 +489,33 @@ fun ProductPerformanceCard(
                                 Surface(
                                     color = colors.profitContainer,
                                     shape = RoundedCornerShape(50),
-                                    border = BorderStroke(1.dp, colors.profitGreen.copy(alpha = 0.35f))
+                                    border = BorderStroke(1.dp, colors.profitGreen.copy(alpha = 0.3f))
                                 ) {
                                     Text(
                                         text = "$qtyText وحدة • +${DateUtils.formatCurrency(prod.totalGrossProfit)}",
                                         color = colors.onProfitContainer,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(7.dp))
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(9.dp)
+                                    .height(8.dp)
                                     .clip(RoundedCornerShape(50))
                                     .background(colors.secondarySurface)
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth(ratio)
-                                        .height(9.dp)
+                                        .height(8.dp)
                                         .clip(RoundedCornerShape(50))
                                         .background(
                                             Brush.horizontalGradient(
-                                                listOf(colors.primaryBrand, colors.secondaryAccent, colors.goldAccent)
+                                                listOf(colors.primaryBrand, colors.goldAccent)
                                             )
                                         )
                                 )
@@ -522,7 +533,7 @@ private fun EmptyChartHint(message: String) {
     val colors = AppTheme.colors
     Surface(
         color = colors.secondarySurface,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, colors.cardBorder),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -538,9 +549,18 @@ private fun EmptyChartHint(message: String) {
 @Composable
 private fun LegendDot(label: String, color: Color) {
     val colors = AppTheme.colors
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(9.dp).background(color, CircleShape))
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = colors.textSecondary)
+    Surface(
+        color = colors.secondarySurface,
+        shape = RoundedCornerShape(50),
+        border = BorderStroke(1.dp, colors.cardBorder)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+        ) {
+            Box(modifier = Modifier.size(8.dp).background(color, CircleShape))
+            Spacer(modifier = Modifier.width(5.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = colors.textSecondary)
+        }
     }
 }

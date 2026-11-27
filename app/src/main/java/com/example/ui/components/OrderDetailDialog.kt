@@ -107,7 +107,7 @@ fun OrderDetailDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand),
                     modifier = Modifier.defaultMinSize(minHeight = 48.dp).bounceClick()
                 ) {
-                    Text("نعم، احذف", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("نعم، احذف", color = colors.onAccentText, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -164,7 +164,7 @@ fun OrderDetailDialog(
                                     text = order.customerName.take(1).ifBlank { "ع" },
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = Color.White
+                                    color = colors.onAccentText
                                 )
                             }
                             Spacer(modifier = Modifier.width(12.dp))
@@ -245,11 +245,27 @@ fun OrderDetailDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val isDelivered = order.status == OrderStatus.DELIVERED.name
+                    val isCancelled = order.status == OrderStatus.CANCELLED.name
                     val statusLabel = OrderStatus.trackingTitle(order.status)
+                    val statusBg = when {
+                        isCancelled -> colors.errorContainer
+                        isDelivered -> colors.profitContainer
+                        else -> colors.secondaryContainer
+                    }
+                    val statusTint = when {
+                        isCancelled -> colors.errorRed
+                        isDelivered -> colors.profitGreen
+                        else -> colors.goldAccent
+                    }
+                    val statusTextColor = when {
+                        isCancelled -> colors.onErrorContainer
+                        isDelivered -> colors.onProfitContainer
+                        else -> colors.goldText
+                    }
                     Surface(
-                        color = if (isDelivered) colors.profitContainer else colors.secondaryContainer,
+                        color = statusBg,
                         shape = RoundedCornerShape(50),
-                        border = BorderStroke(1.dp, if (isDelivered) colors.profitGreen.copy(alpha = 0.4f) else colors.goldAccent.copy(alpha = 0.4f)),
+                        border = BorderStroke(1.dp, statusTint.copy(alpha = 0.4f)),
                         modifier = Modifier.weight(1f)
                     ) {
                         Row(
@@ -258,9 +274,13 @@ fun OrderDetailDialog(
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Icon(
-                                imageVector = if (isDelivered) Icons.Default.CheckCircle else Icons.Default.HourglassTop,
+                                imageVector = when {
+                                    isCancelled -> Icons.Default.Close
+                                    isDelivered -> Icons.Default.CheckCircle
+                                    else -> Icons.Default.HourglassTop
+                                },
                                 contentDescription = null,
-                                tint = if (isDelivered) colors.profitGreen else colors.goldAccent,
+                                tint = statusTint,
                                 modifier = Modifier.size(17.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -268,7 +288,7 @@ fun OrderDetailDialog(
                                 text = statusLabel,
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isDelivered) colors.onProfitContainer else colors.goldAccent
+                                color = statusTextColor
                             )
                         }
                     }
@@ -328,7 +348,11 @@ fun OrderDetailDialog(
                         CulinaryPillChip(
                             label = title,
                             selected = isSelected,
-                            selectedColor = if (st == OrderStatus.DELIVERED) colors.profitGreen else colors.primaryBrand,
+                            selectedColor = when (st) {
+                                OrderStatus.DELIVERED -> colors.profitGreen
+                                OrderStatus.CANCELLED -> colors.errorRed
+                                else -> colors.primaryBrand
+                            },
                             onClick = { onSelectStatus(st.name) }
                         )
                     }
@@ -360,12 +384,41 @@ fun OrderDetailDialog(
                                 Text(DateUtils.formatCurrencyWithDecimal(order.shippingFee), fontWeight = FontWeight.SemiBold, color = colors.goldAccent)
                             }
                         }
+                        if (order.extraPrepCost > 0.0 || order.extraPrepNotes.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("تكلفة شراء الأصناف:", color = colors.textSecondary)
+                                Text(
+                                    text = DateUtils.formatCurrencyWithDecimal(order.itemsCostPrice),
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = colors.textPrimary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(
+                                    text = if (order.extraPrepNotes.isNotBlank()) {
+                                        "تجهيز وخامات (${order.extraPrepNotes}):"
+                                    } else {
+                                        "تكاليف تجهيز وخامات مساعدة:"
+                                    },
+                                    color = colors.textSecondary,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = DateUtils.formatCurrencyWithDecimal(order.extraPrepCost),
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = colors.goldText
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("إجمالي تكلفة الشراء:", color = colors.textSecondary)
+                            Text("إجمالي تكلفة الأوردر:", color = colors.textSecondary)
                             Text(
                                 text = DateUtils.formatCurrencyWithDecimal(order.costPrice),
-                                fontWeight = FontWeight.SemiBold,
+                                fontWeight = FontWeight.Bold,
                                 color = colors.textPrimary
                             )
                         }
@@ -444,7 +497,11 @@ fun OrderDetailDialog(
                                                 color = colors.textPrimary
                                             )
                                             Text(
-                                                text = "شراء/وحدة: ${DateUtils.formatCurrencyWithDecimal(li.unitPurchaseCost)} • بيع/وحدة: ${DateUtils.formatCurrencyWithDecimal(li.unitSellingPrice)}",
+                                                text = if (li.isTotalCostForWholeQty) {
+                                                    "شراء إجمالي: ${DateUtils.formatCurrencyWithDecimal(li.totalPurchaseCost)} • بيع/وحدة: ${DateUtils.formatCurrencyWithDecimal(li.unitSellingPrice)}"
+                                                } else {
+                                                    "شراء/وحدة: ${DateUtils.formatCurrencyWithDecimal(li.unitPurchaseCost)} • بيع/وحدة: ${DateUtils.formatCurrencyWithDecimal(li.unitSellingPrice)}"
+                                                },
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = colors.textSecondary
                                             )
@@ -532,9 +589,9 @@ fun OrderDetailDialog(
                             shape = RoundedCornerShape(50),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.primaryBrand)
                         ) {
-                            Icon(Icons.Default.Call, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Call, contentDescription = null, tint = colors.onAccentText, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("اتصال", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("اتصال", color = colors.onAccentText, fontWeight = FontWeight.Bold)
                         }
                     }
 

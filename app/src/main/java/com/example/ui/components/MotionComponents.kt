@@ -1,7 +1,9 @@
 package com.example.ui.components
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -9,8 +11,12 @@ import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,12 +27,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -71,6 +77,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -80,7 +87,7 @@ import kotlinx.coroutines.delay
 
 fun Modifier.bounceClick(
     enabled: Boolean = true,
-    scaleDown: Float = 0.96f,
+    scaleDown: Float = 0.965f,
     onClick: (() -> Unit)? = null
 ): Modifier = composed {
     var isPressed by remember { mutableStateOf(false) }
@@ -88,7 +95,7 @@ fun Modifier.bounceClick(
         targetValue = if (isPressed && enabled) scaleDown else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            stiffness = Spring.StiffnessMediumLow
         ),
         label = "bounce_scale"
     )
@@ -123,6 +130,47 @@ fun Modifier.bounceClick(
 }
 
 @Composable
+fun LuxuryCard(
+    modifier: Modifier = Modifier,
+    cornerRadius: Dp = 24.dp,
+    borderColor: Color = AppTheme.colors.cardBorder,
+    borderWidth: Dp = 1.dp,
+    elevation: Dp = 4.dp,
+    containerColor: Color = AppTheme.colors.cardSurface,
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val colors = AppTheme.colors
+    val shape = RoundedCornerShape(cornerRadius)
+    val baseModifier = modifier
+        .fillMaxWidth()
+        .wrapContentHeight()
+        .shadow(
+            elevation = if (colors.isDark) 0.dp else elevation,
+            shape = shape,
+            ambientColor = colors.softShadow,
+            spotColor = colors.softShadow
+        )
+        .animateContentSize(
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        )
+
+    val clickableMod = if (onClick != null) baseModifier.bounceClick(onClick = onClick) else baseModifier
+
+    Surface(
+        color = containerColor,
+        shape = shape,
+        border = BorderStroke(borderWidth, borderColor),
+        modifier = clickableMod
+    ) {
+        Column(content = content)
+    }
+}
+
+@Composable
 fun ThemeToggleIconButton(
     isDarkMode: Boolean,
     onToggle: () -> Unit,
@@ -142,22 +190,23 @@ fun ThemeToggleIconButton(
         onClick = onToggle,
         modifier = modifier
             .size(42.dp)
-            .shadow(4.dp, CircleShape, ambientColor = colors.primaryBrand.copy(alpha = 0.2f))
-            .clip(CircleShape)
-            .background(
-                Brush.linearGradient(
-                    listOf(colors.secondarySurface, colors.cardSurface)
-                )
+            .shadow(
+                elevation = if (colors.isDark) 0.dp else 4.dp,
+                shape = CircleShape,
+                ambientColor = colors.softShadow,
+                spotColor = colors.softShadow
             )
-            .border(1.dp, colors.glassBorder, CircleShape)
+            .clip(CircleShape)
+            .background(colors.cardSurface)
+            .border(1.dp, colors.cardBorder, CircleShape)
             .testTag("theme_toggle_btn")
     ) {
         Icon(
             imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
             contentDescription = if (isDarkMode) "تفعيل الوضع الفاتح" else "تفعيل الوضع الليلي",
-            tint = if (isDarkMode) colors.goldAccent else colors.primaryBrand,
+            tint = if (isDarkMode) colors.goldText else colors.primaryBrand,
             modifier = Modifier
-                .size(20.dp)
+                .size(19.dp)
                 .graphicsLayer { rotationZ = rotation }
         )
     }
@@ -188,8 +237,8 @@ fun OrderCelebrationDialog(
         Surface(
             color = colors.cardSurface,
             shape = RoundedCornerShape(30.dp),
-            border = BorderStroke(1.2.dp, colors.profitGreen.copy(alpha = 0.45f)),
-            tonalElevation = 10.dp,
+            border = BorderStroke(1.2.dp, colors.goldAccent.copy(alpha = 0.55f)),
+            tonalElevation = 6.dp,
             shadowElevation = 18.dp,
             modifier = Modifier
                 .fillMaxWidth()
@@ -230,7 +279,7 @@ fun OrderCelebrationDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.size(18.dp))
 
                 Text(
                     text = "بألف هنا وشفا! ✨",
@@ -240,7 +289,7 @@ fun OrderCelebrationDialog(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.size(8.dp))
 
                 Text(
                     text = message,
@@ -249,7 +298,7 @@ fun OrderCelebrationDialog(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(22.dp))
+                Spacer(modifier = Modifier.size(22.dp))
 
                 Button(
                     onClick = onDismiss,
@@ -282,12 +331,12 @@ fun AnimatedCurrencyCounter(
 ) {
     val animatedVal by animateFloatAsState(
         targetValue = targetValue.toFloat(),
-        animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 680, easing = FastOutSlowInEasing),
         label = "currency_counter"
     )
     Text(
         text = "$prefix${DateUtils.formatCurrency(animatedVal.toDouble())}",
-        style = style,
+        style = style.copy(fontFeatureSettings = "tnum"),
         color = color,
         modifier = modifier
     )
@@ -303,12 +352,12 @@ fun AnimatedIntCounter(
 ) {
     val animatedInt by animateIntAsState(
         targetValue = targetValue,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 580, easing = FastOutSlowInEasing),
         label = "int_counter"
     )
     Text(
         text = "$animatedInt$suffix",
-        style = style,
+        style = style.copy(fontFeatureSettings = "tnum"),
         color = color,
         modifier = modifier
     )
@@ -320,10 +369,10 @@ fun StaggeredAppearItem(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    var visible by remember { mutableStateOf(index >= 8) }
+    var visible by remember { mutableStateOf(index >= 10) }
     LaunchedEffect(index) {
         if (!visible) {
-            val delayMs = (index.coerceIn(0, 6)) * 28L
+            val delayMs = (index.coerceIn(0, 8)) * 32L
             if (delayMs > 0L) delay(delayMs)
             visible = true
         }
@@ -332,15 +381,21 @@ fun StaggeredAppearItem(
     AnimatedVisibility(
         visible = visible,
         modifier = modifier,
-        enter = fadeIn(animationSpec = tween(220)) +
+        enter = fadeIn(animationSpec = tween(250, easing = FastOutSlowInEasing)) +
             slideInVertically(
-                initialOffsetY = { it / 6 },
+                initialOffsetY = { it / 7 },
                 animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    dampingRatio = 0.84f,
                     stiffness = Spring.StiffnessMediumLow
                 )
             ) +
-            scaleIn(initialScale = 0.98f, animationSpec = tween(200))
+            scaleIn(
+                initialScale = 0.97f,
+                animationSpec = spring(
+                    dampingRatio = 0.86f,
+                    stiffness = Spring.StiffnessMediumLow
+                )
+            )
     ) {
         content()
     }
@@ -357,28 +412,35 @@ fun CulinaryPillChip(
     val colors = AppTheme.colors
     val bgColor by animateColorAsState(
         targetValue = if (selected) selectedColor else colors.cardSurface,
-        animationSpec = tween(200),
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
         label = "chip_bg"
     )
     val borderColor by animateColorAsState(
         targetValue = if (selected) selectedColor else colors.cardBorder,
-        animationSpec = tween(200),
+        animationSpec = tween(220),
         label = "chip_border"
     )
     val scale by animateFloatAsState(
         targetValue = if (selected) 1.03f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
+            stiffness = Spring.StiffnessMediumLow
         ),
         label = "chip_scale"
     )
+
+    val contentTextColor = when {
+        !selected -> colors.textPrimary
+        selectedColor == colors.primaryBrand -> colors.onAccentText
+        selectedColor == colors.goldAccent -> colors.textPrimary
+        else -> Color.White
+    }
 
     Surface(
         color = bgColor,
         shape = RoundedCornerShape(50),
         border = BorderStroke(1.dp, borderColor),
-        shadowElevation = if (selected) 4.dp else 0.dp,
+        shadowElevation = if (selected) 4.dp else if (colors.isDark) 0.dp else 1.dp,
         modifier = modifier
             .graphicsLayer {
                 scaleX = scale
@@ -392,8 +454,8 @@ fun CulinaryPillChip(
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
-            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium,
-            color = if (selected) Color.White else colors.textSecondary,
+            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
+            color = contentTextColor,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp)
@@ -415,24 +477,24 @@ fun CulinaryQuantityStepper(
 
     LaunchedEffect(pulseIncrease) {
         if (pulseIncrease) {
-            delay(150)
+            delay(160)
             pulseIncrease = false
         }
     }
     LaunchedEffect(pulseDecrease) {
         if (pulseDecrease) {
-            delay(150)
+            delay(160)
             pulseDecrease = false
         }
     }
 
     val plusBg by animateColorAsState(
-        targetValue = if (pulseIncrease) colors.secondaryAccent else colors.primaryBrand,
+        targetValue = if (pulseIncrease) colors.goldAccent else colors.primaryBrand,
         animationSpec = tween(160),
         label = "plus_pulse"
     )
     val minusBg by animateColorAsState(
-        targetValue = if (pulseDecrease) colors.primaryBrand.copy(alpha = 0.25f) else colors.cardSurface,
+        targetValue = if (pulseDecrease) colors.primaryContainer else colors.cardSurface,
         animationSpec = tween(160),
         label = "minus_pulse"
     )
@@ -441,12 +503,13 @@ fun CulinaryQuantityStepper(
         color = colors.secondarySurface,
         shape = RoundedCornerShape(50),
         border = BorderStroke(1.dp, colors.cardBorder),
+        shadowElevation = if (colors.isDark) 0.dp else 2.dp,
         modifier = modifier.wrapContentHeight()
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.padding(horizontal = 5.dp, vertical = 4.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -464,18 +527,31 @@ fun CulinaryQuantityStepper(
                 Icon(Icons.Default.Remove, contentDescription = "تقليل", tint = colors.textPrimary, modifier = Modifier.size(16.dp))
             }
 
-            Text(
-                text = quantityText,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.ExtraBold,
-                color = colors.primaryBrand,
-                modifier = Modifier.padding(horizontal = 6.dp)
-            )
+            AnimatedContent(
+                targetState = quantityText,
+                transitionSpec = {
+                    (slideInVertically(
+                        initialOffsetY = { -it / 2 },
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                    ) + fadeIn(tween(150))) togetherWith
+                        (slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut(tween(120)))
+                },
+                label = "qty_digit_anim"
+            ) { qty ->
+                Text(
+                    text = qty,
+                    style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum"),
+                    fontWeight = FontWeight.ExtraBold,
+                    color = colors.primaryBrand,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
 
             Box(
                 modifier = Modifier
                     .size(34.dp)
-                    .shadow(4.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.35f))
+                    .shadow(3.dp, CircleShape, spotColor = colors.primaryBrand.copy(alpha = 0.25f))
                     .clip(CircleShape)
                     .background(plusBg)
                     .bounceClick {
@@ -485,7 +561,7 @@ fun CulinaryQuantityStepper(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Add, contentDescription = "زيادة", tint = Color.White, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Add, contentDescription = "زيادة", tint = colors.onAccentText, modifier = Modifier.size(16.dp))
             }
         }
     }
@@ -506,28 +582,24 @@ fun FloatingNavDock(
     modifier: Modifier = Modifier
 ) {
     val colors = AppTheme.colors
+    val haptic = LocalHapticFeedback.current
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             color = colors.floatingDock,
-            shape = RoundedCornerShape(32.dp),
+            shape = RoundedCornerShape(30.dp),
             border = BorderStroke(
-                1.dp,
-                Brush.horizontalGradient(
-                    listOf(
-                        colors.cardBorder,
-                        colors.primaryBrand.copy(alpha = 0.35f),
-                        colors.cardBorder
-                    )
-                )
+                width = 1.dp,
+                color = if (colors.isDark) colors.glassBorder else colors.cardBorder
             ),
-            tonalElevation = 10.dp,
-            shadowElevation = 14.dp,
+            tonalElevation = if (colors.isDark) 6.dp else 0.dp,
+            shadowElevation = if (colors.isDark) 14.dp else 10.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
@@ -536,83 +608,76 @@ fun FloatingNavDock(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 items.forEach { item ->
-                    val pillColor by animateColorAsState(
-                        targetValue = if (item.selected) colors.primaryBrand.copy(alpha = 0.16f) else Color.Transparent,
-                        animationSpec = tween(200),
-                        label = "dock_pill"
+                    val containerBg by animateColorAsState(
+                        targetValue = if (item.selected) colors.primaryContainer else Color.Transparent,
+                        animationSpec = tween(240, easing = FastOutSlowInEasing),
+                        label = "dock_item_bg"
+                    )
+                    val iconPillBg by animateColorAsState(
+                        targetValue = if (item.selected) colors.primaryBrand else Color.Transparent,
+                        animationSpec = tween(240, easing = FastOutSlowInEasing),
+                        label = "dock_pill_bg"
                     )
                     val iconTint by animateColorAsState(
-                        targetValue = if (item.selected) colors.primaryBrand else colors.textSecondary,
-                        animationSpec = tween(200),
-                        label = "dock_tint"
+                        targetValue = if (item.selected) colors.onAccentText else colors.textSecondary,
+                        animationSpec = tween(220),
+                        label = "dock_icon_tint"
                     )
                     val labelColor by animateColorAsState(
                         targetValue = if (item.selected) colors.primaryBrand else colors.textSecondary,
-                        animationSpec = tween(200),
-                        label = "dock_label"
+                        animationSpec = tween(220),
+                        label = "dock_label_color"
                     )
                     val scale by animateFloatAsState(
-                        targetValue = if (item.selected) 1.06f else 1f,
+                        targetValue = if (item.selected) 1.03f else 1f,
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
+                            stiffness = Spring.StiffnessMediumLow
                         ),
-                        label = "dock_scale"
+                        label = "dock_item_scale"
                     )
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                         modifier = Modifier
                             .weight(1f)
+                            .minimumInteractiveComponentSize()
                             .graphicsLayer {
                                 scaleX = scale
                                 scaleY = scale
                             }
-                            .clip(RoundedCornerShape(24.dp))
-                            .bounceClick(onClick = item.onClick)
-                            .padding(vertical = 4.dp)
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(containerBg)
+                            .bounceClick {
+                                if (!item.selected) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
+                                item.onClick()
+                            }
+                            .padding(vertical = 5.dp, horizontal = 4.dp)
                             .testTag(item.testTag)
                     ) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))
-                                .background(
-                                    if (item.selected) {
-                                        Brush.horizontalGradient(
-                                            listOf(
-                                                colors.primaryBrand.copy(alpha = 0.24f),
-                                                colors.secondaryAccent.copy(alpha = 0.18f)
-                                            )
-                                        )
-                                    } else {
-                                        Brush.horizontalGradient(listOf(pillColor, pillColor))
-                                    }
-                                )
-                                .then(
-                                    if (item.selected) {
-                                        Modifier.border(
-                                            1.dp,
-                                            colors.primaryBrand.copy(alpha = 0.5f),
-                                            RoundedCornerShape(50)
-                                        )
-                                    } else Modifier
-                                )
-                                .padding(horizontal = 13.dp, vertical = 5.dp),
+                                .background(iconPillBg)
+                                .padding(horizontal = 13.dp, vertical = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = if (item.selected) item.selectedIcon else item.unselectedIcon,
                                 contentDescription = item.title,
                                 tint = iconTint,
-                                modifier = Modifier.size(21.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.size(2.dp))
+                        Spacer(modifier = Modifier.size(3.dp))
                         Text(
                             text = item.title,
                             fontSize = 10.sp,
@@ -621,6 +686,19 @@ fun FloatingNavDock(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+                        AnimatedVisibility(
+                            visible = item.selected,
+                            enter = fadeIn(tween(200)) + scaleIn(initialScale = 0.4f),
+                            exit = fadeOut(tween(150)) + scaleOut(targetScale = 0.4f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 2.dp)
+                                    .size(width = 14.dp, height = 2.5.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(colors.goldAccent)
+                            )
+                        }
                     }
                 }
             }

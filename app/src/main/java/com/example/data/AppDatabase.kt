@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
         GeneratedMenuEntity::class,
         TreasuryTransactionEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -225,6 +225,13 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `orders` ADD COLUMN `extraPrepCost` REAL NOT NULL DEFAULT 0.0")
+                db.execSQL("ALTER TABLE `orders` ADD COLUMN `extraPrepNotes` TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -232,7 +239,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "akleh_helwa_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .addCallback(DatabaseCallback())
                     .build()
                 INSTANCE = instance

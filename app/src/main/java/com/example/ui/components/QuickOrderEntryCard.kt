@@ -113,7 +113,7 @@ fun QuickOrderEntryCard(
                         Icon(
                             imageVector = Icons.Default.Bolt,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = colors.onAccentText,
                             modifier = Modifier.size(19.dp)
                         )
                     }
@@ -277,13 +277,13 @@ fun QuickOrderEntryCard(
                 Icon(
                     imageVector = Icons.Default.AddShoppingCart,
                     contentDescription = null,
-                    tint = if (canSubmit) Color.White else colors.textSecondary,
+                    tint = if (canSubmit) colors.onAccentText else colors.textSecondary,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "حفظ الأوردر السريع",
-                    color = if (canSubmit) Color.White else colors.textSecondary,
+                    color = if (canSubmit) colors.onAccentText else colors.textSecondary,
                     fontWeight = FontWeight.ExtraBold
                 )
             }

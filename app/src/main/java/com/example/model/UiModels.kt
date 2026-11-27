@@ -114,6 +114,7 @@ data class MonthlyStats(
     val yearMonth: String = "",
     val totalSales: Double = 0.0,
     val totalPurchaseCost: Double = 0.0,
+    val totalExtraPrepCost: Double = 0.0,
     val grossProfitBeforeExpenses: Double = 0.0,
     val profitMarginPercent: Double = 0.0,
     val totalExpenses: Double = 0.0,
@@ -136,7 +137,7 @@ data class DraftOrderLineItem(
     val quantity: Double = 1.0,
     val unitPurchaseCost: Double = 0.0,
     val unitSellingPrice: Double = 0.0,
-    val isTotalCostForWholeQty: Boolean = false
+    val isTotalCostForWholeQty: Boolean = true
 ) {
     val totalPurchaseCost: Double
         get() = if (isTotalCostForWholeQty) unitPurchaseCost else quantity * unitPurchaseCost
@@ -206,3 +207,11 @@ data class AppVersionConfig(
         return latestVersionCode > installedVersionCode && downloadUrl.isNotBlank()
     }
 }
+
+data class ForceResyncReport(
+    val ordersSynced: Int = 0,
+    val productsSynced: Int = 0,
+    val menuItemsSynced: Int = 0,
+    val usersSynced: Int = 0
+)
+
